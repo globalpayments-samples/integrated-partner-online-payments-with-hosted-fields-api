@@ -1,35 +1,37 @@
-# Node.js Card Payment Example
+# Node.js Card Payment Integration
 
-This example demonstrates card payment processing using Express.js and the Global Payments SDK.
+This implementation demonstrates complete card payment processing using Node.js/Express with Global Payments hosted fields tokenization and JWT authentication.
 
 ## Requirements
 
 - Node.js 14.x or later
 - npm (Node Package Manager)
-- Global Payments account and API credentials
+- Global Payments account with JWT authentication enabled
 
 ## Project Structure
 
-- `server.js` - Main application file containing server setup and payment processing
-- `index.html` - Client-side payment form
-- `package.json` - Project dependencies and scripts
-- `.env.sample` - Template for environment variables
-- `run.sh` - Convenience script to run the application
+- `server.js` - Express server with JWT creation and payment processing
+- `package.json` - Project dependencies (express, dotenv, jsonwebtoken, node-fetch)
+- `.env.sample` - Environment variable template
+- `run.sh` - Startup script
+- `../index.html` - Shared client-side payment form (parent directory)
 
 ## Setup
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments credentials:
+1. Copy `.env.sample` to `.env`
+2. Update `.env` with your Global Payments credentials:
+   ```bash
+   HOSTED_FIELDS_API_KEY=your_hosted_fields_api_key
+   TRANSACTIONS_API_KEY=your_transactions_api_key
+   AUTHTOKEN_JWT_SECRET=your_jwt_secret
+   ACCOUNT_CREDENTIAL=your_account_credential
+   PORT=8000
    ```
-   PUBLIC_API_KEY=pk_test_xxx
-   SECRET_API_KEY=sk_test_xxx
-   ```
-4. Install dependencies:
+3. Install dependencies:
    ```bash
    npm install
    ```
-5. Run the application:
+4. Run the application:
    ```bash
    ./run.sh
    ```
@@ -37,76 +39,123 @@ This example demonstrates card payment processing using Express.js and the Globa
    ```bash
    node server.js
    ```
+5. Open [http://localhost:8000](http://localhost:8000) in your browser
 
 ## Implementation Details
 
-### Server Setup
-The application uses Express.js to create a web server that:
-- Serves static files
-- Processes payment requests
-- Provides configuration endpoint for client-side SDK
-- Handles JSON and form-encoded requests
+### JWT Authentication
+The server generates JWT tokens for hosted fields authentication:
+- Creates JWT payload with account credential and region
+- Signs token using HS256 algorithm with `AUTHTOKEN_JWT_SECRET`
+- Token includes timestamp for validation
+- Configures token for AuthTokenV2 type
 
-### SDK Configuration
-Global Payments SDK configuration using environment variables:
-- Loads credentials from .env file
-- Sets up service URL for API communication
-- Configures developer identification
+### Server Configuration
+Express.js server setup:
+- Serves static files from current directory
+- Parses JSON and URL-encoded request bodies
+- Handles CORS for cross-origin requests
+- Listens on configurable port (default: 8000)
 
-### Payment Processing
-Payment processing flow:
-1. Client submits payment token and billing zip
-2. Server creates CreditCardData with token
-3. Creates Address with postal code
-4. Processes $10 USD charge
-5. Returns success/error response
+### Payment Processing Flow
+1. Client requests configuration via `/config` endpoint (receives `HOSTED_FIELDS_API_KEY`)
+2. Hosted fields library initializes with API key
+3. User enters card details in secure iframes
+4. Hosted fields tokenize card data client-side
+5. Client submits payment token, amount, and billing zip to `/process-payment`
+6. Server constructs JWT token for API authentication
+7. Server makes direct API call to Global Payments endpoint using `TRANSACTIONS_API_KEY`
+8. Payment is processed and transaction ID is returned
+9. Results are displayed to the client
 
-### Error Handling
-Implements comprehensive error handling:
-- Catches and processes API exceptions
-- Differentiates between API and general errors
-- Returns appropriate error messages
+### Input Sanitization
+Implements robust input validation:
+- **Postal codes**: Removes non-alphanumeric characters (except hyphens), limits to 10 characters
+- **Amounts**: Parses and validates as decimal, ensures positive value
+- **Tokens**: Validates presence and format
+- Prevents injection attacks and malformed data
+
+### Direct API Integration
+Server-to-server payment processing:
+- Constructs REST API request with transaction details
+- Includes JWT authentication header (`Authorization: AuthToken <jwt>`)
+- Includes API key header (`X-GP-Api-Key`)
+- Sends JSON payload with payment token and billing data
+- Handles API responses and errors
+- Extracts transaction IDs from successful payments
 
 ## API Endpoints
 
 ### GET /config
-Returns public API key for client-side SDK initialization.
+Returns hosted fields API key for client-side initialization.
 
-Response:
+**Response:**
 ```json
 {
-    "publicApiKey": "pk_test_xxx"
+  "success": true,
+  "data": {
+    "apiKey": "your_hosted_fields_api_key"
+  }
 }
 ```
 
 ### POST /process-payment
-Processes a payment using the provided token and billing information.
+Processes a card payment using tokenized card data.
 
-Request Parameters:
-- `payment_token` (string, required) - Token from client-side SDK
-- `billing_zip` (string, required) - Billing postal code
-
-Response (Success):
-```
-Payment successful! Transaction ID: xxx
-```
-
-Response (Error):
-```
-API Error: [error message]
-```
-or
-```
-Error: [error message]
+**Request:**
+```json
+{
+  "payment_token": "PMT_xxxxx",
+  "billing_zip": "12345",
+  "amount": "10.00"
+}
 ```
 
-## Security Considerations
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Payment successful! Transaction ID: TRN_xxxxx"
+}
+```
 
-This example demonstrates basic implementation. For production use, consider:
-- Implementing additional input validation
-- Adding request rate limiting
-- Including security headers
-- Implementing proper logging
-- Adding payment fraud prevention measures
-- Using HTTPS in production
-- Configuring Cross-Origin Resource Sharing (CORS) appropriately
+**Response (Error):**
+```json
+{
+  "success": false,
+  "message": "Payment processing error: [error details]"
+}
+```
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `HOSTED_FIELDS_API_KEY` | API key for hosted fields client-side | Yes |
+| `TRANSACTIONS_API_KEY` | API key for server-side transactions | Yes |
+| `AUTHTOKEN_JWT_SECRET` | Secret key for JWT signing | Yes |
+| `ACCOUNT_CREDENTIAL` | Global Payments account credential | Yes |
+| `PORT` | Server port (default: 8000) | No |
+
+## Security Features
+
+This implementation includes production-ready security:
+
+- **PCI Compliance** - Card data never touches your server (hosted fields handle tokenization)
+- **JWT Authentication** - Secure, time-limited tokens for API access
+- **Input Sanitization** - All user inputs are validated and sanitized
+- **Environment Variables** - Credentials stored securely outside source code
+- **Error Handling** - Generic error messages prevent information disclosure
+- **CORS Configuration** - Properly configured for production use
+
+## Production Considerations
+
+Before deploying to production:
+- Enable HTTPS (required for PCI compliance)
+- Configure rate limiting to prevent abuse
+- Add comprehensive logging and monitoring
+- Implement idempotency keys for payment retries
+- Set up webhook handling for async payment notifications
+- Configure appropriate CORS origins
+- Add request timeout handling
+- Implement proper error tracking

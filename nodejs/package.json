@@ -1,7 +1,7 @@
 {
-  "name": "card-payments",
+  "name": "integrated-partner-hosted-fields-nodejs",
   "version": "1.0.0",
-  "description": "Card payments example using Node.js",
+  "description": "Card payments example using Node.js with integrated partner hosted fields",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -10,6 +10,6 @@
   "dependencies": {
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "globalpayments-api": "^3.10.6"
+    "jsonwebtoken": "^9.0.2"
   }
 }

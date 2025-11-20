@@ -16,18 +16,25 @@
     </properties>
 
     <dependencies>
-        <!-- Global Payments SDK -->
-        <dependency>
-            <groupId>com.heartlandpaymentsystems</groupId>
-            <artifactId>globalpayments-sdk</artifactId>
-            <version>14.2.20</version>
-        </dependency>
-
         <!-- Dotenv -->
         <dependency>
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-java</artifactId>
             <version>3.0.0</version>
+        </dependency>
+
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.9.1</version>
+        </dependency>
+
+        <!-- JSON -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20231013</version>
         </dependency>
 
         <!-- Servlet API -->
@@ -36,6 +43,13 @@
             <artifactId>jakarta.servlet-api</artifactId>
             <version>5.0.0</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- JAXB API for Java 9+ (required by jjwt) -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
         </dependency>
     </dependencies>
 

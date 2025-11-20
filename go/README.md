@@ -1,111 +1,126 @@
-# Go Card Payment Example
+# Go Card Payment Integration
 
-This example demonstrates card payment processing using Go and the Global Payments SDK.
+This implementation demonstrates complete card payment processing using Go with Global Payments hosted fields tokenization and JWT authentication.
 
 ## Requirements
 
 - Go 1.23 or later
-- Global Payments account and API credentials
+- Global Payments account with JWT authentication enabled
 
 ## Project Structure
 
-- `main.go` - Server implementation with payment processing
-- `static/index.html` - Client-side payment form
-- `.env.sample` - Template for environment variables
+- `main.go` - HTTP server with JWT creation and payment processing
+- `go.mod` - Go module dependencies (jwt-go, godotenv)
+- `.env.sample` - Environment variable template
+- `run.sh` - Startup script
+- `../index.html` - Shared client-side payment form (parent directory)
 
 ## Setup
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments credentials:
+1. Copy `.env.sample` to `.env`
+2. Update `.env` with your Global Payments credentials:
+   ```bash
+   HOSTED_FIELDS_API_KEY=your_hosted_fields_api_key
+   TRANSACTIONS_API_KEY=your_transactions_api_key
+   AUTHTOKEN_JWT_SECRET=your_jwt_secret
+   ACCOUNT_CREDENTIAL=your_account_credential
    ```
-   PUBLIC_API_KEY=pk_test_xxx
-   SECRET_API_KEY=sk_test_xxx
-   ```
-4. Install dependencies:
+3. Install dependencies:
    ```bash
    go mod download
    ```
-5. Run the application:
+4. Run the application:
+   ```bash
+   ./run.sh
+   ```
+   Or manually:
    ```bash
    go run main.go
    ```
-   The server will start on http://localhost:8888
+5. Open [http://localhost:8888](http://localhost:8888) in your browser
 
 ## Implementation Details
 
-### Application Structure
-The application uses a simple Go structure:
-- Static HTML form for payment collection
-- RESTful API endpoints for configuration and payment processing
-- Environment variable configuration
+### JWT Authentication
+Uses golang-jwt/jwt library for token generation:
+- Creates JWT payload with account credential and region
+- Signs token using HS256 algorithm with `AUTHTOKEN_JWT_SECRET`
+- Token includes timestamp for validation
+- Configured for AuthTokenV2 type
 
-### SDK Configuration
-Global Payments SDK configuration using environment variables:
-- Loads credentials from .env file
-- Sets up service URL for API communication
-- Configures developer identification
+### Server Configuration
+Standard library HTTP server:
+- Native http.ServeMux for routing
+- Static file serving from parent directory
+- JSON encoding/decoding with encoding/json
+- Environment variable loading via godotenv
+- Listens on port 8888 by default
 
-### Payment Processing
-Payment processing flow:
-1. Client submits payment token and billing zip
-2. Server creates CreditCardData with token
-3. Creates Address with postal code
-4. Processes $10 USD charge
-5. Returns success/error response as JSON
+### Payment Processing Flow
+1. Client requests configuration via `/config` endpoint (receives `HOSTED_FIELDS_API_KEY`)
+2. Hosted fields library initializes with API key
+3. User enters card details in secure iframes
+4. Hosted fields tokenize card data client-side
+5. Client submits payment token, amount, and billing zip to `/process-payment`
+6. Server constructs JWT token for API authentication
+7. Server makes direct HTTP call to Global Payments endpoint using `TRANSACTIONS_API_KEY`
+8. Payment is processed using http.Client and transaction ID is returned
 
-### Error Handling
-Implements comprehensive error handling:
-- Catches and processes API exceptions
-- Returns appropriate error messages and HTTP status codes
-- Handles edge cases gracefully
+### Input Sanitization
+- Postal codes: Regex validation, alphanumeric and hyphens only, max 10 characters
+- Amounts: Float parsing with positive value validation
+- Tokens: Presence and format validation
+- Uses regexp package for validation
 
 ## API Endpoints
 
 ### GET /config
-Returns the public API key for client-side SDK initialization.
+Returns hosted fields API key.
 
-Response:
+**Response:**
 ```json
 {
-  "publicApiKey": "pk_test_xxx"
+  "success": true,
+  "data": {
+    "apiKey": "ALALaW0WQoKZ8MjFNfGm7J7FA6UFYCc4"
+  }
 }
 ```
 
 ### POST /process-payment
-Processes a payment using the provided token and billing information.
+Processes a card payment using tokenized card data.
 
-Request:
-```json
-{
-  "payment_token": "token_from_client_sdk",
-  "billing_zip": "12345"
-}
-```
+**Request/Response:** Same format as other implementations (see main README)
 
-Response (Success):
-```json
-{
-  "message": "Payment successful! Transaction ID: xxx"
-}
-```
+## Environment Variables
 
-Response (Error):
-```json
-{
-  "error": "Payment processing error: Invalid card data"
-}
-```
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `HOSTED_FIELDS_API_KEY` | API key for hosted fields client-side | Yes |
+| `TRANSACTIONS_API_KEY` | API key for server-side transactions | Yes |
+| `AUTHTOKEN_JWT_SECRET` | Secret key for JWT signing | Yes |
+| `ACCOUNT_CREDENTIAL` | Global Payments account credential | Yes |
 
-## Security Considerations
+## Testing
 
-This example demonstrates basic implementation. For production use, consider:
-- Implementing request rate limiting
-- Adding security headers
-- Implementing proper logging
-- Adding payment fraud prevention measures
-- Using HTTPS in production
-- Implementing CSRF protection
-- Setting appropriate security headers
-- Proper error handling and logging
-- Input validation and sanitization
+Use test card numbers from Global Payments (see main README for details).
+
+## Security Features
+
+- PCI Compliance via hosted fields
+- JWT Authentication
+- Input sanitization and validation
+- Environment variable credential storage
+- Secure error handling with proper HTTP status codes
+
+## Production Considerations
+
+- Use reverse proxy (Nginx, Caddy)
+- Enable HTTPS with TLS certificates
+- Implement rate limiting middleware
+- Add structured logging (logrus, zap)
+- Use context for request timeouts
+- Implement graceful shutdown
+- Configure CORS properly
+- Add request ID tracing
+- Use connection pooling for HTTP client

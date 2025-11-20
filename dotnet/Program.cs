@@ -1,14 +1,16 @@
-using GlobalPayments.Api;
-using GlobalPayments.Api.Entities;
-using GlobalPayments.Api.PaymentMethods;
 using dotenv.net;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using Microsoft.IdentityModel.Tokens;
 
 namespace CardPaymentSample;
 
 /// <summary>
 /// Card Payment Processing Application
-/// 
-/// This application demonstrates card payment processing using the Global Payments SDK.
+///
+/// This application demonstrates card payment processing using the Global Payments API.
 /// It provides endpoints for configuration and payment processing, handling tokenized
 /// card data to ensure secure payment processing.
 /// </summary>
@@ -20,37 +22,45 @@ public class Program
         DotEnv.Load();
 
         var builder = WebApplication.CreateBuilder(args);
-        
+
         var app = builder.Build();
 
         // Configure static file serving for the payment form
         app.UseDefaultFiles();
         app.UseStaticFiles();
-        
-        // Configure the SDK on startup
-        ConfigureGlobalPaymentsSDK();
 
         ConfigureEndpoints(app);
-        
+
         var port = System.Environment.GetEnvironmentVariable("PORT") ?? "8000";
         app.Urls.Add($"http://0.0.0.0:{port}");
-        
+
         app.Run();
     }
 
     /// <summary>
-    /// Configures the Global Payments SDK with necessary credentials and settings.
-    /// This must be called before processing any payments.
+    /// Creates a JWT for authentication
     /// </summary>
-    private static void ConfigureGlobalPaymentsSDK()
+    /// <returns>JWT token string</returns>
+    private static string CreateJWT()
     {
-        ServicesContainer.ConfigureService(new PorticoConfig
+        var key = System.Environment.GetEnvironmentVariable("AUTHTOKEN_JWT_SECRET");
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
         {
-            SecretApiKey = System.Environment.GetEnvironmentVariable("SECRET_API_KEY"),
-            DeveloperId = "000000",
-            VersionNumber = "0000",
-            ServiceUrl = "https://cert.api2.heartlandportico.com"
-        });
+            new Claim("type", "AuthTokenV2"),
+            new Claim("region", "US"),
+            new Claim("account_credential", System.Environment.GetEnvironmentVariable("ACCOUNT_CREDENTIAL") ?? ""),
+            new Claim("ts", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString())
+        };
+
+        var token = new JwtSecurityToken(
+            claims: claims,
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     /// <summary>
@@ -61,10 +71,11 @@ public class Program
     {
         // Configure HTTP endpoints
         app.MapGet("/config", () => Results.Ok(new
-        { 
+        {
             success = true,
-            data = new {
-                publicApiKey = System.Environment.GetEnvironmentVariable("PUBLIC_API_KEY")
+            data = new
+            {
+                apiKey = System.Environment.GetEnvironmentVariable("HOSTED_FIELDS_API_KEY")
             }
         }));
 
@@ -82,10 +93,10 @@ public class Program
     private static string SanitizePostalCode(string postalCode)
     {
         if (string.IsNullOrEmpty(postalCode)) return string.Empty;
-        
+
         // Remove any characters that aren't alphanumeric or hyphen
         var sanitized = new string(postalCode.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
-        
+
         // Limit length to 10 characters
         return sanitized.Length > 10 ? sanitized[..10] : sanitized;
     }
@@ -107,10 +118,12 @@ public class Program
             // Validate required fields are present
             if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(billingZip) || string.IsNullOrEmpty(amountStr))
             {
-                return Results.BadRequest(new {
+                return Results.BadRequest(new
+                {
                     success = false,
                     message = "Payment processing failed",
-                    error = new {
+                    error = new
+                    {
                         code = "VALIDATION_ERROR",
                         details = "Missing required fields"
                     }
@@ -120,72 +133,107 @@ public class Program
             // Validate and parse amount
             if (!decimal.TryParse(amountStr, out var amount) || amount <= 0)
             {
-                return Results.BadRequest(new {
+                return Results.BadRequest(new
+                {
                     success = false,
                     message = "Payment processing failed",
-                    error = new {
+                    error = new
+                    {
                         code = "VALIDATION_ERROR",
                         details = "Amount must be a positive number"
                     }
                 });
             }
 
-            // Initialize payment data using tokenized card information
-            var card = new CreditCardData
-            {
-                Token = token
-            };
+            var serviceUrl = "https://api.pit.paygateway.com";
+            var endpoint = "/transactions/creditsales";
 
-            // Create billing address for AVS verification
-            var address = new Address
-            {
-                PostalCode = SanitizePostalCode(billingZip)
-            };
+            // try
+            // {
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("Authorization", "AuthToken " + CreateJWT());
+                httpClient.DefaultRequestHeaders.Add("X-GP-Version", "2021-04-08");
+                httpClient.DefaultRequestHeaders.Add("X-GP-Api-Key", System.Environment.GetEnvironmentVariable("TRANSACTIONS_API_KEY"));
+                httpClient.DefaultRequestHeaders.Add("X-GP-Partner-App-Name", "GP Integrated Hosted Fields Sample (.NET)");
 
-            try
-            {
-                // Process the payment transaction using the provided amount
-                var response = card.Charge(amount)
-                    .WithAllowDuplicates(true)
-                    .WithCurrency("USD")
-                    .WithAddress(address)
-                    .Execute();
+                var requestBody = new
+                {
+                    reference_id = Guid.NewGuid().ToString(),
+                    card = new { temporary_token = token },
+                    customer = new
+                    {
+                        billing_address = new
+                        {
+                            postal_code = billingZip
+                        }
+                    },
+                    payment = new
+                    {
+                        amount = amountStr,
+                        currency_code = "840"
+                    },
+                    transaction = new
+                    {
+                        country_code = "840",
+                        processing_indicators = new
+                        {
+                            allow_duplicate = true,
+                            create_token = true,
+                            address_verification_service = true
+                        }
+                    }
+                };
+
+                var jsonContent = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(jsonContent);
+                content.Headers.Remove("Content-Type");
+                content.Headers.Add("Content-Type", "application/json");
+
+                var response = await httpClient.PostAsync(serviceUrl + endpoint, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
                 // Verify transaction was successful
-                if (response.ResponseCode != "00")
+                if (apiResponse.GetProperty("status").GetString() != "approved")
                 {
-                    return Results.BadRequest(new {
+                    return Results.BadRequest(new
+                    {
                         success = false,
                         message = "Payment processing failed",
-                        error = new {
+                        error = new
+                        {
                             code = "PAYMENT_DECLINED",
-                            details = response.ResponseMessage
+                            details = apiResponse.GetProperty("status").GetString()
                         }
                     });
                 }
 
-                // Return success response with transaction ID
+                // Return success response with reference ID
+                var referenceId = apiResponse.GetProperty("reference_id").GetString();
                 return Results.Ok(new
                 {
                     success = true,
-                    message = $"Payment successful! Transaction ID: {response.TransactionId}",
-                    data = new {
-                        transactionId = response.TransactionId
+                    message = $"Payment successful! Reference ID: {referenceId}",
+                    data = new
+                    {
+                        reference_id = referenceId
                     }
                 });
-            } 
-            catch (ApiException ex)
-            {
-                // Handle payment processing errors
-                return Results.BadRequest(new {
-                    success = false,
-                    message = "Payment processing failed",
-                    error = new {
-                        code = "API_ERROR",
-                        details = ex.Message
-                    }
-                });
-            }
+            // }
+            // catch (Exception ex)
+            // {
+            //     // Handle payment processing errors
+            //     return Results.BadRequest(new
+            //     {
+            //         success = false,
+            //         message = "Payment processing failed",
+            //         error = new
+            //         {
+            //             code = "API_ERROR",
+            //             details = ex.Message
+            //         }
+            //     });
+            // }
         });
     }
 }

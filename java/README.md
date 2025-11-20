@@ -1,36 +1,39 @@
-# Java Card Payment Example
+# Java Card Payment Integration
 
-This example demonstrates card payment processing using Jakarta EE and the Global Payments SDK.
+This implementation demonstrates complete card payment processing using Java with Global Payments hosted fields tokenization and JWT authentication.
 
 ## Requirements
 
 - Java 11 or later
 - Maven
-- Global Payments account and API credentials
+- Global Payments account with JWT authentication enabled
 
 ## Project Structure
 
-- `src/main/java/com/globalpayments/example/ProcessPaymentServlet.java` - Main servlet handling payment processing
-- `src/main/webapp/index.html` - Client-side payment form
+- `src/main/java/com/globalpayments/example/` - Java servlet implementation
+  - `ProcessPaymentServlet.java` - Payment processing endpoint
+  - `ConfigServlet.java` - Configuration endpoint
 - `src/main/webapp/WEB-INF/web.xml` - Web application configuration
-- `.env.sample` - Template for environment variables
-- `pom.xml` - Project dependencies and build configuration
-- `run.sh` - Convenience script to run the application
+- `.env.sample` - Environment variable template
+- `pom.xml` - Maven dependencies (jakarta.servlet, java-jwt, gson, dotenv-java)
+- `run.sh` - Startup script with Jetty server
+- `../index.html` - Shared client-side payment form (parent directory)
 
 ## Setup
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments credentials:
+1. Copy `.env.sample` to `.env`
+2. Update `.env` with your Global Payments credentials:
+   ```bash
+   HOSTED_FIELDS_API_KEY=your_hosted_fields_api_key
+   TRANSACTIONS_API_KEY=your_transactions_api_key
+   AUTHTOKEN_JWT_SECRET=your_jwt_secret
+   ACCOUNT_CREDENTIAL=your_account_credential
    ```
-   PUBLIC_API_KEY=pk_test_xxx
-   SECRET_API_KEY=sk_test_xxx
-   ```
-4. Install dependencies:
+3. Install dependencies and build:
    ```bash
    mvn clean install
    ```
-5. Run the application:
+4. Run the application:
    ```bash
    ./run.sh
    ```
@@ -38,70 +41,81 @@ This example demonstrates card payment processing using Jakarta EE and the Globa
    ```bash
    mvn jetty:run
    ```
+5. Open [http://localhost:8000](http://localhost:8000) in your browser
 
 ## Implementation Details
 
+### JWT Authentication
+Uses Auth0's Java-JWT library to generate authentication tokens:
+- Creates JWT payload with account credential and region
+- Signs token using HS256 algorithm with `AUTHTOKEN_JWT_SECRET`
+- Token includes timestamp for validation
+- Configured for AuthTokenV2 type
+
 ### Servlet Configuration
-The application uses Jakarta EE servlets to:
-- Handle payment processing requests
-- Serve configuration data
-- Process form submissions
+Jakarta EE servlet-based implementation:
+- Separate servlets for configuration and payment processing
+- JSON request/response handling with Gson
+- Environment variable configuration via dotenv-java
+- Runs on embedded Jetty server for development
 
-### SDK Configuration
-Global Payments SDK configuration is handled in the servlet's init method:
-- Loads credentials from .env file
-- Sets up service URL for API communication
-- Configures developer identification
+### Payment Processing Flow
+1. Client requests configuration via `/config` servlet (receives `HOSTED_FIELDS_API_KEY`)
+2. Hosted fields library initializes with API key
+3. User enters card details in secure iframes
+4. Hosted fields tokenize card data client-side
+5. Client submits payment token, amount, and billing zip to `/process-payment`
+6. Server constructs JWT token for API authentication
+7. Server makes direct HTTP call to Global Payments endpoint using `TRANSACTIONS_API_KEY`
+8. Payment is processed and transaction ID is returned
 
-### Payment Processing
-Payment processing flow:
-1. Client submits payment token and billing zip
-2. Server creates CreditCardData with token
-3. Creates Address with postal code
-4. Processes $10 USD charge
-5. Returns success/error response
-
-### Error Handling
-Implements comprehensive error handling:
-- Catches and processes API exceptions
-- Returns appropriate HTTP status codes
-- Provides meaningful error messages
+### Input Sanitization
+- Postal codes: Regex validation, alphanumeric and hyphens only, max 10 characters
+- Amounts: Decimal validation, positive value enforcement
+- Tokens: Presence and format validation
 
 ## API Endpoints
 
-### GET /public-key
-Returns public API key for client-side SDK initialization.
+### GET /config
+Returns hosted fields API key.
 
-Response:
+**Response:**
 ```json
 {
-    "publicApiKey": "pk_test_xxx"
+  "success": true,
+  "data": {
+    "apiKey": "your_hosted_fields_api_key"
+  }
 }
 ```
 
 ### POST /process-payment
-Processes a payment using the provided token and billing information.
+Processes a card payment using tokenized card data.
 
-Request Parameters:
-- `payment_token` (string, required) - Token from client-side SDK
-- `billing_zip` (string, required) - Billing postal code
+**Request/Response:** Same format as other implementations (see main README)
 
-Response (Success):
-```
-Payment successful! Transaction ID: xxx
-```
+## Environment Variables
 
-Response (Error):
-```
-Error: [error message]
-```
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `HOSTED_FIELDS_API_KEY` | API key for hosted fields client-side | Yes |
+| `TRANSACTIONS_API_KEY` | API key for server-side transactions | Yes |
+| `AUTHTOKEN_JWT_SECRET` | Secret key for JWT signing | Yes |
+| `ACCOUNT_CREDENTIAL` | Global Payments account credential | Yes |
 
-## Security Considerations
+## Security Features
 
-This example demonstrates basic implementation. For production use, consider:
-- Implementing additional input validation
-- Adding request rate limiting
-- Including security headers
-- Implementing proper logging
-- Adding payment fraud prevention measures
-- Configuring secure session management
+- PCI Compliance via hosted fields
+- JWT Authentication
+- Input sanitization and validation
+- Environment variable credential storage
+- Secure error handling
+
+## Production Considerations
+
+- Deploy to production servlet container (Tomcat, WildFly, etc.)
+- Enable HTTPS
+- Configure rate limiting
+- Add comprehensive logging
+- Implement proper exception handling
+- Use connection pooling for HTTP requests

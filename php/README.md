@@ -1,29 +1,32 @@
-# PHP Card Payment Example
+# PHP Card Payment Integration
 
-This example demonstrates card payment processing using PHP and the Global Payments SDK.
+This implementation demonstrates complete card payment processing using PHP with Global Payments hosted fields tokenization and JWT authentication.
 
 ## Requirements
 
-- PHP 7.4 or later
+- PHP 7.4 or later (PHP 8.2+ recommended)
 - Composer
-- Global Payments account and API credentials
+- Global Payments account with JWT authentication enabled
 
 ## Project Structure
 
-- `process-payment.php` - Payment processing script
-- `index.php` - Client-side payment form
-- `composer.json` - Project dependencies
-- `.env.sample` - Template for environment variables
-- `run.sh` - Convenience script to run the application
+- `config.php` - Configuration and JWT generation
+- `process-payment.php` - Payment processing endpoint
+- `composer.json` - Project dependencies (firebase/php-jwt, vlucas/phpdotenv, guzzlehttp/guzzle)
+- `.env.sample` - Environment variable template
+- `run.sh` - Startup script with built-in PHP server
+- `../index.html` - Shared client-side payment form (parent directory)
 
 ## Setup
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments credentials:
-   ```
-   PUBLIC_API_KEY=pk_test_xxx
-   SECRET_API_KEY=sk_test_xxx
+1. Copy `.env.sample` to `.env`
+2. Update `.env` with your Global Payments credentials:
+   ```bash
+   HOSTED_FIELDS_API_KEY=your_hosted_fields_api_key
+   TRANSACTIONS_API_KEY=your_transactions_api_key
+   AUTHTOKEN_JWT_SECRET=your_jwt_secret
+   ACCOUNT_CREDENTIAL=your_account_credential
+   PORT=8000
    ```
 4. Install dependencies:
    ```bash
@@ -38,62 +41,112 @@ This example demonstrates card payment processing using PHP and the Global Payme
    php -S localhost:8000
    ```
 
+5. Open [http://localhost:8000](http://localhost:8000) in your browser
+
 ## Implementation Details
 
+### JWT Authentication
+The server generates JWT tokens for hosted fields authentication:
+- Creates JWT payload with account credential and region
+- Signs token using HS256 algorithm with `AUTHTOKEN_JWT_SECRET`
+- Token includes timestamp for validation
+- Uses Firebase PHP-JWT library
+
 ### Application Structure
-The application uses a simple PHP structure:
-- Static HTML form for payment collection
-- Separate PHP script for payment processing
-- Composer for dependency management
+PHP-based implementation:
+- Uses Composer for dependency management
+- Built-in PHP server for development
+- Separate endpoints for config and payment processing
+- JSON responses with proper headers
 
-### SDK Configuration
-Global Payments SDK configuration using environment variables:
-- Loads credentials from .env file
-- Sets up service URL for API communication
-- Configures developer identification
+### Payment Processing Flow
+1. Client requests configuration via `/config` endpoint (receives `HOSTED_FIELDS_API_KEY`)
+2. Hosted fields library initializes with API key
+3. User enters card details in secure iframes
+4. Hosted fields tokenize card data client-side
+5. Client submits payment token, amount, and billing zip to `/process-payment`
+6. Server constructs JWT token for API authentication
+7. Server makes direct API call to Global Payments endpoint using `TRANSACTIONS_API_KEY`
+8. Payment is processed using Guzzle HTTP client
+9. Transaction ID is extracted and returned to client
 
-### Payment Processing
-Payment processing flow:
-1. Client submits payment token and billing zip
-2. Server creates CreditCardData with token
-3. Creates Address with postal code
-4. Processes $10 USD charge
-5. Returns success/error response
-
-### Error Handling
-Implements comprehensive error handling:
-- Catches and processes API exceptions
-- Returns appropriate error messages
-- Handles edge cases gracefully
+### Input Sanitization
+Implements robust input validation:
+- **Postal codes**: Regex validation, removes non-alphanumeric characters (except hyphens)
+- **Amounts**: Parses and validates as decimal, ensures positive value
+- **Tokens**: Validates presence and format
+- Prevents injection attacks and malformed data
 
 ## API Endpoints
 
-### POST /process-payment.php
-Processes a payment using the provided token and billing information.
+### GET /config
+Returns hosted fields API key for client-side initialization.
 
-Request Parameters:
-- `payment_token` (string, required) - Token from client-side SDK
-- `billing_zip` (string, required) - Billing postal code
-
-Response (Success):
-```
-Payment successful! Transaction ID: xxx
-```
-
-Response (Error):
-```
-Error: [error message]
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "apiKey": "your_hosted_fields_api_key"
+  }
+}
 ```
 
-## Security Considerations
+### POST /process-payment
+Processes a card payment using tokenized card data.
 
-This example demonstrates basic implementation. For production use, consider:
-- Implementing additional input validation
-- Adding request rate limiting
-- Including security headers
-- Implementing proper logging
-- Adding payment fraud prevention measures
-- Using HTTPS in production
-- Implementing CSRF protection
-- Configuring proper session handling
-- Setting appropriate PHP security directives
+**Request:**
+```json
+{
+  "payment_token": "PMT_xxxxx",
+  "billing_zip": "12345",
+  "amount": "10.00"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Payment successful! Transaction ID: TRN_xxxxx"
+}
+```
+
+**Response (Error):**
+```json
+{
+  "success": false,
+  "message": "Payment processing error: [error details]"
+}
+```
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `HOSTED_FIELDS_API_KEY` | API key for hosted fields client-side | Yes |
+| `TRANSACTIONS_API_KEY` | API key for server-side transactions | Yes |
+| `AUTHTOKEN_JWT_SECRET` | Secret key for JWT signing | Yes |
+| `ACCOUNT_CREDENTIAL` | Global Payments account credential | Yes |
+| `PORT` | Server port (default: 8000) | No |
+
+## Security Features
+
+This implementation includes production-ready security:
+
+- **PCI Compliance** - Card data never touches your server
+- **JWT Authentication** - Secure tokens for API access
+- **Input Sanitization** - All inputs validated and sanitized
+- **Environment Variables** - Credentials stored securely
+- **Error Handling** - Generic error messages
+- **CORS Headers** - Properly configured
+
+## Production Considerations
+
+- Use Apache/Nginx instead of built-in PHP server
+- Enable HTTPS (required for PCI compliance)
+- Configure rate limiting
+- Implement CSRF protection
+- Set proper PHP security directives (disable_functions, open_basedir)
+- Add comprehensive logging
+- Implement idempotency keys
