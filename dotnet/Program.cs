@@ -148,8 +148,8 @@ public class Program
             var serviceUrl = "https://api.pit.paygateway.com";
             var endpoint = "/transactions/creditsales";
 
-            // try
-            // {
+            try
+            {
                 using var httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("Authorization", "AuthToken " + CreateJWT());
                 httpClient.DefaultRequestHeaders.Add("X-GP-Version", "2021-04-08");
@@ -219,21 +219,21 @@ public class Program
                         reference_id = referenceId
                     }
                 });
-            // }
-            // catch (Exception ex)
-            // {
-            //     // Handle payment processing errors
-            //     return Results.BadRequest(new
-            //     {
-            //         success = false,
-            //         message = "Payment processing failed",
-            //         error = new
-            //         {
-            //             code = "API_ERROR",
-            //             details = ex.Message
-            //         }
-            //     });
-            // }
+            }
+            catch (Exception ex)
+            {
+                // Handle payment processing errors
+                return Results.BadRequest(new
+                {
+                    success = false,
+                    message = "Payment processing failed",
+                    error = new
+                    {
+                        code = "API_ERROR",
+                        details = ex.Message
+                    }
+                });
+            }
         });
     }
 }
