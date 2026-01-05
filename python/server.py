@@ -1,18 +1,21 @@
 """
-Global Payments SDK Template - Python Flask
+Card Payment Processing Server - Python Flask
 
-This Flask application provides a starting template for Global Payments SDK integration.
-Customize the endpoints and logic below for your specific use case.
+This server demonstrates card payment processing using Global Payments hosted fields
+tokenization and JWT authentication. It handles tokenized card data and billing
+information to process payments securely through the Global Payments API via direct
+HTTP requests (not SDK-based).
 """
 
 import os
 import re
+import json
+import time
+import uuid
+import requests
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
-from globalpayments.api import PorticoConfig, ServicesContainer
-from globalpayments.api.payment_methods import CreditCardData
-from globalpayments.api.entities import Address
-from globalpayments.api.entities.exceptions import ApiException
+import jwt
 
 # Load environment variables
 load_dotenv()
@@ -20,129 +23,151 @@ load_dotenv()
 # Initialize application
 app = Flask(__name__, static_folder='.')
 
-def configure_sdk():
-    """
-    Configure the Global Payments SDK with necessary credentials and settings.
-    Customize these settings for your environment.
-    """
-    config = PorticoConfig()
-    config.secret_api_key = os.getenv('SECRET_API_KEY')
-    config.service_url = 'https://cert.api2.heartlandportico.com'  # Use production URL for live transactions
-    config.developer_id = '000000'  # Your developer ID
-    config.version_number = '0000'  # Your version number
-    
-    ServicesContainer.configure(config)
 
-# Configure SDK on startup
-configure_sdk()
+def create_jwt():
+    """
+    Create JWT for authentication
 
-def sanitize_postal_code(postal_code: str) -> str:
+    Returns:
+        str: JWT token
     """
-    Utility function to sanitize postal code.
-    Customize validation logic as needed for your use case.
+    key = os.getenv('AUTHTOKEN_JWT_SECRET')
+
+    payload = {
+        'type': 'AuthTokenV2',
+        'region': 'US',
+        'account_credential': os.getenv('ACCOUNT_CREDENTIAL'),
+        'ts': int(time.time() * 1000)
+    }
+
+    return jwt.encode(payload, key, algorithm='HS256')
+
+
+def sanitize_postal_code(postal_code):
     """
-    sanitized = re.sub(r'[^a-zA-Z0-9-]', '', postal_code or '')
+    Sanitize postal code by removing invalid characters
+
+    Args:
+        postal_code: The postal code to sanitize
+
+    Returns:
+        str: Sanitized postal code containing only alphanumeric
+             characters and hyphens, limited to 10 characters
+    """
+    if not postal_code:
+        return ''
+
+    sanitized = re.sub(r'[^a-zA-Z0-9-]', '', postal_code)
     return sanitized[:10]
+
 
 @app.route('/')
 def index():
     """Serve the main HTML page."""
     return app.send_static_file('index.html')
 
+
 @app.route('/config')
 def get_config():
-    """
-    Config endpoint - provides public API key for client-side use.
-    Customize response data as needed.
-    """
+    """Config endpoint - provides hosted fields API key for client-side initialization."""
     return jsonify({
         'success': True,
         'data': {
-            'publicApiKey': os.getenv('PUBLIC_API_KEY')
-            # Add other configuration data as needed
+            'apiKey': os.getenv('HOSTED_FIELDS_API_KEY')
         }
     })
 
+
 @app.route('/process-payment', methods=['POST'])
 def process_payment():
-    """
-    Example payment processing endpoint.
-    Customize this endpoint for your specific payment flow.
-    """
+    """Payment processing endpoint."""
     try:
-        # TODO: Add your payment processing logic here
-        # Example implementation for basic charge:
-        
-        if 'payment_token' not in request.form:
-            raise ApiException('Payment token is required')
+        # Validate required fields
+        if not request.form.get('payment_token') or not request.form.get('billing_zip') or not request.form.get('amount'):
+            raise Exception('Missing required fields')
 
-        card = CreditCardData()
-        card.token = request.form['payment_token']
+        # Parse and validate amount
+        amount = float(request.form.get('amount'))
+        if amount <= 0:
+            raise Exception('Invalid amount')
 
-        # Customize amount and other parameters as needed
-        amount = float(request.form.get('amount', 10.00))
+        service_url = 'https://api.pit.paygateway.com'
+        endpoint = '/transactions/creditsales'
 
-        # Add billing address if needed
-        if 'billing_zip' in request.form:
-            address = Address()
-            address.postal_code = sanitize_postal_code(request.form['billing_zip'])
-            
-            response = card.charge(amount)\
-                .with_allow_duplicates(True)\
-                .with_currency('USD')\
-                .with_address(address)\
-                .execute()
-        else:
-            # Process without address
-            response = card.charge(amount)\
-                .with_allow_duplicates(True)\
-                .with_currency('USD')\
-                .execute()
+        # Initialize payment data using tokenized card information
+        request_headers = {
+            'Authorization': 'AuthToken ' + create_jwt(),
+            'X-GP-Version': '2021-04-08',
+            'X-GP-Api-Key': os.getenv('TRANSACTIONS_API_KEY'),
+            'X-GP-Partner-App-Name': 'GP Integrated Hosted Fields Sample (Python)',
+            'Content-Type': 'application/json'
+        }
 
+        request_body = {
+            'reference_id': str(uuid.uuid4()),
+            'card': {'temporary_token': request.form.get('payment_token')},
+            'customer': {
+                'billing_address': {
+                    'postal_code': request.form.get('billing_zip')
+                }
+            },
+            'payment': {
+                'amount': request.form.get('amount'),
+                'currency_code': '840'
+            },
+            'transaction': {
+                'country_code': '840',
+                'processing_indicators': {
+                    'allow_duplicate': True,
+                    'create_token': True,
+                    'address_verification_service': True
+                }
+            }
+        }
+
+        response = requests.post(
+            service_url + endpoint,
+            headers=request_headers,
+            json=request_body,
+            timeout=65
+        )
+
+        data = response.json()
+
+        # Verify transaction was successful
+        if data.get('status') != 'approved':
+            return jsonify({
+                'success': False,
+                'message': 'Payment processing failed',
+                'error': {
+                    'code': 'PAYMENT_DECLINED',
+                    'details': data.get('status')
+                }
+            }), 400
+
+        # Return success response with transaction ID
         return jsonify({
             'success': True,
-            'message': 'Payment processed successfully',
-            'data': {'transactionId': response.transaction_id}
+            'message': f"Payment successful! Reference ID: {data.get('reference_id')}",
+            'data': {
+                'reference_id': data.get('reference_id')
+            }
         })
 
-    except ApiException as e:
-        return jsonify({
-            'success': False,
-            'message': 'Payment processing failed',
-            'error': str(e)
-        }), 400
     except Exception as e:
+        # Handle payment processing errors
         return jsonify({
             'success': False,
             'message': 'Payment processing failed',
-            'error': str(e)
-        }), 500
+            'error': {
+                'code': 'API_ERROR',
+                'details': str(e)
+            }
+        }), 400
 
-# Add your custom endpoints here
-# Examples:
-# @app.route('/authorize', methods=['POST'])
-# def authorize_payment():
-#     # Authorization only logic
-#     pass
-#
-# @app.route('/capture', methods=['POST'])  
-# def capture_payment():
-#     # Capture authorized payment logic
-#     pass
-#
-# @app.route('/refund', methods=['POST'])
-# def refund_payment():
-#     # Process refund logic
-#     pass
-#
-# @app.route('/transaction/<transaction_id>')
-# def get_transaction(transaction_id):
-#     # Get transaction details logic
-#     pass
 
 # Start the server if this file is run directly
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8000))
     print(f"Server running at http://localhost:{port}")
-    print("Customize this template for your use case!")
     app.run(host='0.0.0.0', port=port, debug=True)

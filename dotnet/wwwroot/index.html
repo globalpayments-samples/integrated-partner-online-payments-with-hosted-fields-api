@@ -37,14 +37,11 @@
         <!-- Tabs -->
         <div class="gp-tabs">
             <div class="gp-tab-list">
-                <button class="gp-tab-button active" data-tab="payment-form">Payment Form</button>
-                <button class="gp-tab-button" data-tab="tokenization">Tokenization</button>
-                <button class="gp-tab-button" data-tab="webhooks">Webhooks</button>
-                <button class="gp-tab-button" data-tab="recurring">Recurring Payments</button>
+                <button class="gp-tab-button active" data-tab="payment-form-wrapper">Payment Form</button>
             </div>
 
             <!-- Payment Form Tab -->
-            <div class="gp-tab-content active" id="payment-form">
+            <div class="gp-tab-content active" id="payment-form-wrapper">
                 <div class="gp-card">
                     <div class="gp-card-header">
                         <h2 class="gp-card-title">Credit Card Payment Form</h2>
@@ -61,120 +58,10 @@
                         
                         <div class="gp-form-group">
                             <label for="billing_zip" class="gp-label">Billing Zip Code:</label>
-                            <input type="text" id="billing_zip" name="billing_zip" class="gp-input" placeholder="12345" required>
+                            <input type="text" id="billing_zip" name="billing_zip" class="gp-input" value="12345" placeholder="12345" required>
                         </div>
 
-                        <div class="gp-form-group">
-                            <label class="gp-label">Credit Card Information:</label>
-                            <div id="credit-card"></div>
-                        </div>
-
-                        <button type="submit" class="gp-button gp-button-primary gp-button-full">
-                            Process Payment
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Tokenization Tab -->
-            <div class="gp-tab-content" id="tokenization">
-                <div class="gp-card">
-                    <div class="gp-card-header">
-                        <h2 class="gp-card-title">Card Tokenization</h2>
-                        <p class="gp-card-description">
-                            Securely tokenize payment methods for future use without storing sensitive card data.
-                        </p>
-                    </div>
-                    
-                    <div class="gp-alert gp-alert-info">
-                        <strong>Info:</strong> Tokens can be stored securely and used for future transactions without handling raw card data.
-                    </div>
-
-                    <form id="tokenization-form" class="gp-form">
-                        <div class="gp-form-group">
-                            <label class="gp-label">Card Information for Tokenization:</label>
-                            <div id="credit-card-token"></div>
-                        </div>
-
-                        <button type="submit" class="gp-button gp-button-primary gp-button-full">
-                            Generate Token
-                        </button>
-                    </form>
-
-                    <div id="token-result" class="gp-hidden">
-                        <h3 class="gp-card-title gp-mt-lg">Generated Token:</h3>
-                        <div class="gp-code-block" id="token-display"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Webhooks Tab -->
-            <div class="gp-tab-content" id="webhooks">
-                <div class="gp-card">
-                    <div class="gp-card-header">
-                        <h2 class="gp-card-title">Webhook Integration</h2>
-                        <p class="gp-card-description">
-                            Configure and test webhook endpoints for real-time payment notifications.
-                        </p>
-                    </div>
-                    
-                    <div class="gp-code-block">
-// Example webhook handler
-app.post('/webhook', (req, res) => {
-    const signature = req.headers['x-gp-signature'];
-    const payload = req.body;
-    
-    // Verify webhook signature
-    if (verifySignature(payload, signature)) {
-        handlePaymentEvent(payload);
-        res.status(200).send('OK');
-    } else {
-        res.status(400).send('Invalid signature');
-    }
-});
-                    </div>
-
-                    <div class="gp-alert gp-alert-warning">
-                        <strong>Security:</strong> Always verify webhook signatures to ensure requests are from Global Payments.
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recurring Payments Tab -->
-            <div class="gp-tab-content" id="recurring">
-                <div class="gp-card">
-                    <div class="gp-card-header">
-                        <h2 class="gp-card-title">Recurring Payments</h2>
-                        <p class="gp-card-description">
-                            Set up subscription billing and recurring payment schedules.
-                        </p>
-                    </div>
-                    
-                    <form id="recurring-form" class="gp-form">
-                        <div class="gp-form-row">
-                            <div class="gp-form-group">
-                                <label for="subscription-amount" class="gp-label">Monthly Amount ($):</label>
-                                <input type="number" id="subscription-amount" name="subscription-amount" class="gp-input" min="1.00" step="0.01" value="29.99" required>
-                            </div>
-                            
-                            <div class="gp-form-group">
-                                <label for="billing-cycle" class="gp-label">Billing Cycle:</label>
-                                <select id="billing-cycle" name="billing-cycle" class="gp-select" required>
-                                    <option value="monthly">Monthly</option>
-                                    <option value="quarterly">Quarterly</option>
-                                    <option value="annually">Annually</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="gp-form-group">
-                            <label class="gp-label">Payment Method:</label>
-                            <div id="credit-card-recurring"></div>
-                        </div>
-
-                        <button type="submit" class="gp-button gp-button-primary gp-button-full">
-                            Set Up Subscription
-                        </button>
+                        <div id="credit-card-form"></div>
                     </form>
                 </div>
             </div>
@@ -208,6 +95,209 @@ app.post('/webhook', (req, res) => {
         </div>
     </footer>
 
-    <script src="https://globalpayments-samples.github.io/js/script.js"></script>
+    <script src="https://js.paygateway.com/secure_payment/v1/globalpayments.js"></script>
+    <script>
+        // Global Payments Template JavaScript
+        class GPTemplate {
+            constructor() {
+                this.config = null;
+                this.cardForms = {};
+                this.init();
+            }
+
+            async init() {
+                await this.loadConfig();
+                await this.initPaymentForms();
+            }
+
+            async loadConfig() {
+                try {
+                    // In a real implementation, this would fetch from your backend
+                    // For demo purposes, we'll use a placeholder
+                    await ensureGlobalPaymentsReady();
+                    const config = await fetchWithRetry('/config');
+                    
+                    if (typeof GlobalPayments !== 'undefined') {
+                        GlobalPayments.configure({
+                            'X-GP-Api-Key': config.data.apiKey,
+                            'X-GP-Environment': 'test',
+                            'enableAutoComplete': true
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to load configuration:', error);
+                    this.showAlert('error', 'Failed to initialize payment system. Please refresh the page.');
+                }
+            }
+
+            async initPaymentForms() {
+                // Initialize the default active tab
+                await this.initCardFormForTab('payment-form');
+            }
+
+            async initCardFormForTab(tabId) {
+                if (this.cardForms[tabId] || typeof GlobalPayments === 'undefined') {
+                    return;
+                }
+
+                let containerId;
+                switch (tabId) {
+                    case 'payment-form':
+                        containerId = '#credit-card-form';
+                        break;
+                    default:
+                        return;
+                }
+
+                try {
+                    const cardForm = GlobalPayments.creditCard.form(containerId, { style: 'gp-default' });
+
+                    cardForm.on('token-success', (resp) => {
+                        this.handleTokenSuccess(resp, tabId);
+                    });
+
+                    cardForm.on('token-error', (error) => {
+                        this.handleTokenError(error, tabId);
+                    });
+
+                    this.cardForms[tabId] = cardForm;
+
+                } catch (error) {
+                    console.error(`Failed to initialize card form for ${tabId}:`, error);
+                }
+            }
+
+            handleTokenSuccess(resp, tabId) {
+                const form = document.getElementById(this.getFormIdForTab(tabId));
+                this.setLoading(form, false);
+
+                if (tabId === 'tokenization') {
+                    // Show token result
+                    this.displayToken(resp.temporary_token);
+                    this.showAlert('success', 'Card tokenized successfully!');
+                } else {
+                    // Add token to form and submit
+                    this.addTokenToForm(form, resp.temporary_token);
+                    
+                    // In a real implementation, you would submit to your backend
+                    form.submit();
+                }
+            }
+
+            handleTokenError(error, tabId) {
+                const form = document.getElementById(this.getFormIdForTab(tabId));
+                this.setLoading(form, false);
+                this.showAlert('error', `Error: ${error.message}`);
+            }
+
+            getFormIdForTab(tabId) {
+                const formMap = {
+                    'payment-form': 'payment-form',
+                };
+                return formMap[tabId];
+            }
+
+            addTokenToForm(form, token) {
+                // Remove existing token input
+                const existingToken = form.querySelector('input[name="payment_token"]');
+                if (existingToken) {
+                    existingToken.remove();
+                }
+
+                // Add new token input
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'payment_token';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+            }
+
+            displayToken(token) {
+                const tokenResult = document.getElementById('token-result');
+                const tokenDisplay = document.getElementById('token-display');
+                
+                tokenDisplay.textContent = token;
+                tokenResult.classList.remove('gp-hidden');
+            }
+
+            setLoading(element, isLoading) {
+                if (isLoading) {
+                    element.classList.add('gp-loading');
+                } else {
+                    element.classList.remove('gp-loading');
+                }
+            }
+
+            showAlert(type, message) {
+                // Remove existing alerts
+                const existingAlerts = document.querySelectorAll('.gp-alert');
+                existingAlerts.forEach(alert => {
+                    if (!alert.classList.contains('gp-alert-info') || alert.textContent.includes('Info:')) {
+                        return; // Keep static info alerts
+                    }
+                    alert.remove();
+                });
+
+                // Create new alert
+                const alert = document.createElement('div');
+                alert.className = `gp-alert gp-alert-${type}`;
+                alert.textContent = message;
+
+                // Insert after the first card header
+                const firstCard = document.querySelector('.gp-tab-content.active .gp-card');
+                if (firstCard) {
+                    const cardHeader = firstCard.querySelector('.gp-card-header');
+                    if (cardHeader) {
+                        cardHeader.after(alert);
+                    }
+                }
+
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    alert.remove();
+                }, 5000);
+            }
+        }
+
+        // Initialize template when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            new GPTemplate();
+        });
+
+        // Helper function to ensure GlobalPayments is loaded
+        function ensureGlobalPaymentsReady() {
+            return new Promise((resolve, reject) => {
+                if (typeof GlobalPayments !== 'undefined') {
+                    resolve();
+                } else {
+                    let attempts = 0;
+                    const checkInterval = setInterval(() => {
+                        attempts++;
+                        if (typeof GlobalPayments !== 'undefined') {
+                            clearInterval(checkInterval);
+                            resolve();
+                        } else if (attempts >= 10) {
+                            clearInterval(checkInterval);
+                            reject(new Error('GlobalPayments failed to initialize'));
+                        }
+                    }, 500);
+                }
+            });
+        }
+
+        // Fetch with retry logic
+        async function fetchWithRetry(url, maxAttempts = 3) {
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (attempt === maxAttempts) throw error;
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+                }
+            }
+        }
+    </script>
 </body>
 </html>

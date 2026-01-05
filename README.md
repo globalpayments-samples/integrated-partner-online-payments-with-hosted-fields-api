@@ -1,6 +1,6 @@
-# Global Payments SDK Starter Template
+# Integrated Partner Online Payments with Hosted Fields
 
-This starter template provides a customizable foundation for Global Payments SDK integration across multiple programming languages. Each implementation includes basic SDK setup, configuration management, and placeholder endpoints that you can modify for your specific payment use cases.
+This project demonstrates complete card payment processing using Global Payments hosted fields tokenization across 6 programming languages. Each implementation provides a fully functional payment integration with JWT authentication and direct API communication.
 
 ## Available Implementations
 
@@ -11,90 +11,133 @@ This starter template provides a customizable foundation for Global Payments SDK
 - [PHP](./php/) - PHP web application
 - [Python](./python/) - Flask web application
 
-## Template Features
+## Key Features
 
-- **SDK Configuration** - Basic setup with environment variables
-- **Placeholder Endpoints** - Ready-to-customize API endpoints  
-- **Error Handling** - Basic error handling structure
-- **Client Integration** - HTML form with hosted fields tokenization
-- **Multiple Languages** - Consistent structure across all implementations
+- **JWT Authentication** - Secure token-based authentication with Global Payments API
+- **Hosted Fields Tokenization** - PCI-compliant card data capture using client-side hosted fields
+- **Direct API Integration** - Server-to-server payment processing via REST API
+- **Cross-language Consistency** - Identical functionality across all 6 language implementations
 
-## Customization Options
+## How It Works
 
-Each template includes:
+### Authentication Flow
+1. Server generates JWT using `AUTHTOKEN_JWT_SECRET` and `ACCOUNT_CREDENTIAL`
+2. Client initializes hosted fields with the JWT token
+3. User enters card details in secure, isolated iframes
+4. Hosted fields library tokenizes card data client-side
 
-1. **Basic SDK Setup**
-   - Environment variable configuration
-   - Service URL configuration
-   - API key management
+### Payment Processing Flow
+1. Client submits tokenized card data and billing zip code
+2. Server receives payment token and billing information
+3. Server makes direct API call to Global Payments endpoint
+4. Payment is processed and transaction ID is returned
+5. Results are displayed to the user
 
-2. **Starter Endpoints**
-   - GET `/config` - Configuration endpoint
-   - POST `/process-payment` - Payment processing template
-   - Commented examples for additional endpoints (authorize, capture, refund, etc.)
-
-3. **Ready-to-Modify Structure**
-   - TODO comments for customization points
-   - Example payment logic you can adapt
-   - Placeholder functions for various payment flows
+### Architecture
+- **Client-side**: Global Payments hosted fields library handles secure card data entry
+- **Server-side**: JWT creation, API request construction, and payment processing
+- **API**: Direct REST communication with Global Payments payment endpoints
 
 ## Quick Start
 
-1. **Copy the template** - Copy this directory to start your new project
-2. **Choose your language** - Navigate to any implementation directory (nodejs, python, php, java, dotnet, go)
-3. **Set up credentials** - Copy `.env.sample` to `.env` and add your Global Payments API keys
-4. **Run the server** - Execute `./run.sh` to install dependencies and start the server
-5. **Customize** - Modify the code for your specific payment use case
+1. **Choose your language** - Navigate to any implementation directory:
+   - [nodejs](./nodejs/) - Node.js with Express
+   - [python](./python/) - Python with Flask
+   - [php](./php/) - PHP with built-in server
+   - [java](./java/) - Java with Jakarta EE
+   - [dotnet](./dotnet/) - .NET Core
+   - [go](./go/) - Go with standard library
 
-## Use Cases You Can Build
+2. **Configure credentials** - Copy `.env.sample` to `.env` and add your credentials:
+   ```bash
+   HOSTED_FIELDS_API_KEY=your_hosted_fields_api_key
+   TRANSACTIONS_API_KEY=your_transactions_api_key
+   AUTHTOKEN_JWT_SECRET=your_jwt_secret
+   ACCOUNT_CREDENTIAL=your_account_credential
+   ```
 
-This template can be adapted for various payment scenarios:
+3. **Run the server** - Execute the run script:
+   ```bash
+   ./run.sh
+   ```
+   The server will start on `http://localhost:8000` (or port 8888 for Go)
 
-- **Basic Charges** - Simple one-time payments
-- **Authorization/Capture** - Two-step payment processing
-- **Subscriptions** - Recurring payment processing
-- **Refunds** - Payment reversal functionality
-- **Multi-step Checkouts** - Complex payment flows
-- **Payment Methods** - Credit cards, ACH, alternative payments
+4. **Test the integration** - Open your browser and complete a test payment
+
+## Environment Variables
+
+Each implementation requires these environment variables:
+
+- `HOSTED_FIELDS_API_KEY` - API key for hosted fields client-side initialization
+- `TRANSACTIONS_API_KEY` - API key for server-side transaction processing
+- `AUTHTOKEN_JWT_SECRET` - Secret key for JWT signing
+- `ACCOUNT_CREDENTIAL` - Your Global Payments account credential
+- `PORT` (optional) - Server port (defaults to 8000, or 8888 for Go)
+
+## API Endpoints
+
+All implementations provide identical API endpoints:
+
+### GET /config
+Returns hosted fields API key for client-side initialization.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "apiKey": "your_hosted_fields_api_key"
+  }
+}
+```
+
+### POST /process-payment
+Processes a card payment using tokenized card data.
+
+**Request:**
+```json
+{
+  "payment_token": "PMT_xxxxx",
+  "billing_zip": "12345",
+  "amount": "10.00"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Payment successful! Transaction ID: TRN_xxxxx"
+}
+```
+
+**Response (Error):**
+```json
+{
+  "success": false,
+  "message": "Payment declined: Insufficient funds"
+}
+```
 
 ## Prerequisites
 
-- Global Payments account with API credentials
-- Development environment for your chosen language
-- Package manager (npm, pip, composer, maven, dotnet, go mod)
+- **Global Payments Account** with JWT authentication enabled
+- **Development Environment** for your chosen language:
+  - Node.js 14+ (for Node.js implementation)
+  - Python 3.7+ (for Python implementation)
+  - PHP 7.4+ (for PHP implementation)
+  - Java 11+ (for Java implementation)
+  - .NET 6.0+ (for .NET implementation)
+  - Go 1.23+ (for Go implementation)
+- **Package Manager** (npm, pip, composer, maven, dotnet, or go mod)
 
-## Customization Guide
+## Security Considerations
 
-### Adding New Endpoints
+This example demonstrates production-ready security patterns:
 
-Each implementation includes commented examples for common payment operations:
-
-```javascript
-// Authorization only
-app.post('/authorize', ...)
-
-// Capture authorized payment  
-app.post('/capture', ...)
-
-// Process refund
-app.post('/refund', ...)
-
-// Get transaction details
-app.get('/transaction/:id', ...)
-```
-
-### Modifying Payment Logic
-
-1. Update the `/process-payment` endpoint for your specific flow
-2. Add validation for your required fields
-3. Customize error handling and responses
-4. Add logging and monitoring as needed
-
-### Production Considerations
-
-Enhance the template for production use with:
-- Input validation and sanitization
-- Comprehensive error handling and logging
-- Security headers and rate limiting
-- PCI compliance measures
-- Monitoring and alerting
+- **PCI Compliance** - No card data touches your server (handled by hosted fields)
+- **JWT Authentication** - Secure, time-limited tokens for API access
+- **Input Sanitization** - Postal codes and amounts are validated and sanitized
+- **HTTPS Required** - Always use HTTPS in production environments
+- **Environment Variables** - Sensitive credentials stored outside source code
+- **Error Handling** - Secure error messages that don't leak sensitive information

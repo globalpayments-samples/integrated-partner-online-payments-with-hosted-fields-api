@@ -33,7 +33,7 @@ try {
     echo json_encode([
         'success' => true,
         'data' => [
-            'publicApiKey' => $_ENV['PUBLIC_API_KEY'],
+            'apiKey' => $_ENV['HOSTED_FIELDS_API_KEY'],
         ],
     ]);
 } catch (Exception $e) {

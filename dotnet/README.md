@@ -1,34 +1,35 @@
-# .NET Card Payment Example
+# .NET Card Payment Integration
 
-This example demonstrates card payment processing using ASP.NET Core and the Global Payments SDK.
+This implementation demonstrates complete card payment processing using .NET Core with Global Payments hosted fields tokenization and JWT authentication.
 
 ## Requirements
 
-- .NET 6.0 or later
-- Global Payments account and API credentials
+- .NET 9.0 or later
+- Global Payments account with JWT authentication enabled
 
 ## Project Structure
 
-- `Program.cs` - Main application file containing server setup and payment processing
-- `wwwroot/index.html` - Client-side payment form
-- `.env.sample` - Template for environment variables
-- `run.sh` - Convenience script to run the application
-- `appsettings.json` - Application configuration file
+- `Program.cs` - ASP.NET Core minimal API with payment processing
+- `.env.sample` - Environment variable template
+- `run.sh` - Startup script
+- `appsettings.json` - Application configuration
+- `../index.html` - Shared client-side payment form (parent directory)
 
 ## Setup
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments credentials:
+1. Copy `.env.sample` to `.env`
+2. Update `.env` with your Global Payments credentials:
+   ```bash
+   HOSTED_FIELDS_API_KEY=your_hosted_fields_api_key
+   TRANSACTIONS_API_KEY=your_transactions_api_key
+   AUTHTOKEN_JWT_SECRET=your_jwt_secret
+   ACCOUNT_CREDENTIAL=your_account_credential
    ```
-   PUBLIC_API_KEY=pk_test_xxx
-   SECRET_API_KEY=sk_test_xxx
-   ```
-4. Install dependencies:
+3. Restore dependencies:
    ```bash
    dotnet restore
    ```
-5. Run the application:
+4. Run the application:
    ```bash
    ./run.sh
    ```
@@ -36,73 +37,84 @@ This example demonstrates card payment processing using ASP.NET Core and the Glo
    ```bash
    dotnet run
    ```
+5. Open [http://localhost:8000](http://localhost:8000) in your browser
 
 ## Implementation Details
 
-### Server Setup
-The application uses ASP.NET Core's minimal API approach to create a lightweight web server that:
-- Serves static files from wwwroot directory
-- Processes payment requests
-- Provides configuration endpoint for client-side SDK
+### JWT Authentication
+Uses System.IdentityModel.Tokens.Jwt for token generation:
+- Creates JWT payload with account credential and region
+- Signs token using HS256 algorithm with `AUTHTOKEN_JWT_SECRET`
+- Token includes timestamp for validation
+- Configured for AuthTokenV2 type
 
-### SDK Configuration
-The Global Payments SDK is configured using environment variables and the PorticoConfig class:
-- Loads credentials from .env file
-- Sets up service URL for API communication
-- Configures developer identification
+### ASP.NET Core Configuration
+Minimal API implementation:
+- Lightweight endpoint configuration
+- Static file serving from parent directory
+- Built-in JSON serialization
+- Environment variable loading via dotenv.net
+- Listens on configurable port (default: 8000)
 
-### Payment Processing
-Payment processing flow:
-1. Client submits payment token and billing zip
-2. Server creates CreditCardData with token
-3. Creates Address with postal code
-4. Processes $10 USD charge
-5. Returns success/error response
+### Payment Processing Flow
+1. Client requests configuration via `/config` endpoint (receives `HOSTED_FIELDS_API_KEY`)
+2. Hosted fields library initializes with API key
+3. User enters card details in secure iframes
+4. Hosted fields tokenize card data client-side
+5. Client submits payment token, amount, and billing zip to `/process-payment`
+6. Server constructs JWT token for API authentication
+7. Server makes direct HTTP call to Global Payments endpoint using `TRANSACTIONS_API_KEY`
+8. Payment is processed using HttpClient and transaction ID is returned
 
-### Error Handling
-Implements comprehensive error handling:
-- Catches and processes API exceptions
-- Returns appropriate HTTP status codes
-- Provides meaningful error messages
+### Input Sanitization
+- Postal codes: Regex validation, alphanumeric and hyphens only, max 10 characters
+- Amounts: Decimal validation with positive value enforcement
+- Tokens: Presence and format validation
 
 ## API Endpoints
 
 ### GET /config
-Returns public API key for client-side SDK initialization.
+Returns hosted fields API key.
 
-Response:
+**Response:**
 ```json
 {
-    "publicApiKey": "pk_test_xxx"
+  "success": true,
+  "data": {
+    "apiKey": "your_hosted_fields_api_key"
+  }
 }
 ```
 
 ### POST /process-payment
-Processes a payment using the provided token and billing information.
+Processes a card payment using tokenized card data.
 
-Request Parameters:
-- `payment_token` (string, required) - Token from client-side SDK
-- `billing_zip` (string, required) - Billing postal code
+**Request/Response:** Same format as other implementations (see main README)
 
-Response (Success):
-```json
-{
-    "message": "Payment successful! Transaction ID: xxx"
-}
-```
+## Environment Variables
 
-Response (Error):
-```json
-{
-    "detail": "Error message"
-}
-```
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `HOSTED_FIELDS_API_KEY` | API key for hosted fields client-side | Yes |
+| `TRANSACTIONS_API_KEY` | API key for server-side transactions | Yes |
+| `AUTHTOKEN_JWT_SECRET` | Secret key for JWT signing | Yes |
+| `ACCOUNT_CREDENTIAL` | Global Payments account credential | Yes |
 
-## Security Considerations
+## Security Features
 
-This example demonstrates basic implementation. For production use, consider:
-- Implementing additional input validation
-- Adding request rate limiting
-- Including security headers
-- Implementing proper logging
-- Adding payment fraud prevention measures
+- PCI Compliance via hosted fields
+- JWT Authentication
+- Input sanitization and validation
+- Environment variable credential storage
+- Secure error handling with proper HTTP status codes
+
+## Production Considerations
+
+- Use production hosting (Azure App Service, IIS, etc.)
+- Enable HTTPS with proper certificates
+- Configure rate limiting middleware
+- Add comprehensive logging (Serilog, NLog)
+- Implement health checks
+- Use HttpClientFactory for connection pooling
+- Configure CORS properly
+- Add request validation middleware
