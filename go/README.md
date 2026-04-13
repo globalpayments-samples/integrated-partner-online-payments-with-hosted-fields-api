@@ -124,3 +124,23 @@ Use test card numbers from Global Payments (see main README for details).
 - Configure CORS properly
 - Add request ID tracing
 - Use connection pooling for HTTP client
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `go` command not found | Install Go 1.21+. Run `go version` to check |
+| Module download fails | Run `go mod tidy` to resolve dependencies |
+| Port already in use | Change port in source or set `PORT` environment variable |
+| `.env` not loading | Verify `.env` file exists in the language directory (not project root) |
+
+---
+
+## Resources
+
+- [Parent Project README](../README.md)
+- [Global Payments Developer Portal](https://developer.globalpayments.com/)
+- [API Reference](https://developer.globalpayments.com/api/references-overview)
+- [Test Cards](https://developer.globalpayments.com/resources/test-cards)
