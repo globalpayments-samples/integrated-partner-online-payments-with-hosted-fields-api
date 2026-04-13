@@ -141,3 +141,12 @@ This example demonstrates production-ready security patterns:
 - **HTTPS Required** - Always use HTTPS in production environments
 - **Environment Variables** - Sensitive credentials stored outside source code
 - **Error Handling** - Secure error messages that don't leak sensitive information
+
+## Resources
+
+- [Global Payments Developer Portal](https://developer.globalpayments.com/)
+- [API Reference](https://developer.globalpayments.com/api/references-overview)
+
+## License
+
+MIT
