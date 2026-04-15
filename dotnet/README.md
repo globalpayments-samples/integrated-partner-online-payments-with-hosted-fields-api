@@ -118,3 +118,23 @@ Processes a card payment using tokenized card data.
 - Use HttpClientFactory for connection pooling
 - Configure CORS properly
 - Add request validation middleware
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `dotnet` command not found | Install .NET SDK 6.0+. Run `dotnet --version` to check |
+| Build fails | Run `dotnet restore` before `dotnet run` |
+| Port already in use | Set a different port in `launchSettings.json` or use `--urls` flag |
+| `.env` not loading | Verify `.env` file exists in the language directory (not project root) |
+
+---
+
+## Resources
+
+- [Parent Project README](../README.md)
+- [Global Payments Developer Portal](https://developer.globalpayments.com/)
+- [API Reference](https://developer.globalpayments.com/api/references-overview)
+- [Test Cards](https://developer.globalpayments.com/resources/test-cards)

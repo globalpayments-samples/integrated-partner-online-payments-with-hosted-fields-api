@@ -165,3 +165,23 @@ Before deploying to production:
 - Set up webhook handling for async payment notifications
 - Add request timeout handling
 - Implement proper error tracking
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `pip install` fails | Ensure Python 3.7+ is installed. Run `python3 --version` to check |
+| Port already in use | Change port: `python server.py --port 8001` or edit `server.py` |
+| `.env` not loading | Verify `.env` file exists in the language directory (not project root) |
+| Module not found errors | Activate virtual environment and run `pip install -r requirements.txt` |
+
+---
+
+## Resources
+
+- [Parent Project README](../README.md)
+- [Global Payments Developer Portal](https://developer.globalpayments.com/)
+- [API Reference](https://developer.globalpayments.com/api/references-overview)
+- [Test Cards](https://developer.globalpayments.com/resources/test-cards)

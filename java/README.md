@@ -119,3 +119,23 @@ Processes a card payment using tokenized card data.
 - Add comprehensive logging
 - Implement proper exception handling
 - Use connection pooling for HTTP requests
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `mvn` command not found | Install Maven 3.6+. Run `mvn -v` to check version |
+| Build fails | Ensure Java 11+ is installed. Run `java -version` to check |
+| Port already in use | Stop other services on port 8000, or modify `pom.xml` cargo config |
+| `.env` not loading | Verify `.env` file exists in the language directory (not project root) |
+
+---
+
+## Resources
+
+- [Parent Project README](../README.md)
+- [Global Payments Developer Portal](https://developer.globalpayments.com/)
+- [API Reference](https://developer.globalpayments.com/api/references-overview)
+- [Test Cards](https://developer.globalpayments.com/resources/test-cards)
