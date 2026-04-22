@@ -8,7 +8,7 @@
 
 2. **JWT is constructed locally — no SDK call.** All six implementations build the JWT manually using `HS256` with a payload of `{type: "AuthTokenV2", region: "US", account_credential, ts: <milliseconds>}`. The `Authorization` header value is `"AuthToken " + <jwt>` (not `"Bearer "`). Using a different prefix or algorithm will produce 401 errors.
 
-3. **Go requires manual header casing.** Go's `net/http` automatically canonicalizes header keys (e.g., `X-Gp-Api-Key`). The Global Payments API requires exact casing (`X-GP-Api-Key`, `X-GP-Version`). The Go implementation works around this by writing to `req.Header[<key>]` directly as a map entry rather than using `req.Header.Set()` — see `go/main.go` lines ~200–205.
+3. **Go requires manual header casing.** Go's `net/http` automatically canonicalizes header keys (e.g., `X-Gp-Api-Key`). The Global Payments API requires exact casing (`X-GP-Api-Key`, `X-GP-Version`). The Go implementation works around this by writing to `req.Header[<key>]` directly as a map entry rather than using `req.Header.Set()` — see `go/main.go` lines ~272–276.
 
 4. **`currency_code` and `country_code` use ISO 4217 numeric codes, not alpha codes.** The value `"840"` means USD/US, not `"USD"`. Using alpha codes causes the transaction to fail silently or be rejected.
 
@@ -19,7 +19,7 @@
 - [`nodejs/index.html`](nodejs/index.html) — frontend: loads hosted fields library, calls `/config`, tokenizes card, submits form
 
 ### Python (Flask)
-- [`python/server.py`](python/server.py) — all logic: JWT creation (line ~19), `/config` and `/process-payment` routes
+- [`python/server.py`](python/server.py) — all logic: JWT creation (line ~27), `/config` and `/process-payment` routes
 
 ### PHP
 - [`php/process-payment.php`](php/process-payment.php) — payment handler: JWT creation, API call via curl helper
@@ -47,7 +47,7 @@
 | GET | `/config` | Returns `HOSTED_FIELDS_API_KEY` to client for hosted fields init |
 | POST | `/process-payment` | Accepts form-encoded `payment_token`, `billing_zip`, `amount`; calls Global Payments `/transactions/creditsales`; returns `reference_id` |
 
-All six implementations expose identical endpoints. Go defaults to port 8888; all others default to 8000.
+All six implementations expose identical endpoints. All implementations default to port 8000.
 
 ## Environment Variables
 
@@ -56,7 +56,7 @@ HOSTED_FIELDS_API_KEY=   # sent to browser — initializes the hosted fields ifr
 TRANSACTIONS_API_KEY=    # server-side only — authenticates payment API requests
 AUTHTOKEN_JWT_SECRET=    # signs the JWT; never leave the server
 ACCOUNT_CREDENTIAL=      # included in JWT payload as account_credential
-PORT=8000                # optional; Go defaults to 8888 if unset
+PORT=8000                # optional; defaults to 8000 if unset
 ```
 
 Copy `.env.sample` → `.env` in the language directory before running.
