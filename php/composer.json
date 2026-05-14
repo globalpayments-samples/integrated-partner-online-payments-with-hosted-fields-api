@@ -2,7 +2,7 @@
     "name": "shane/php",
     "require": {
         "vlucas/phpdotenv": "^5.5",
-        "firebase/php-jwt": "^6.11"
+        "firebase/php-jwt": "^7.0"
     },
     "authors": [
         {
