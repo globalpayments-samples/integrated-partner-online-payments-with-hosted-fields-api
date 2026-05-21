@@ -1,9 +1,8 @@
 {
     "name": "shane/php",
     "require": {
-        "globalpayments/php-sdk": "^13.1",
         "vlucas/phpdotenv": "^5.5",
-        "firebase/php-jwt": "^6.11"
+        "firebase/php-jwt": "^7.0"
     },
     "authors": [
         {

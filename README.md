@@ -60,7 +60,7 @@ This project demonstrates complete card payment processing using Global Payments
    ```bash
    ./run.sh
    ```
-   The server will start on `http://localhost:8000` (or port 8888 for Go)
+   The server will start on `http://localhost:8000`
 
 4. **Test the integration** - Open your browser and complete a test payment
 
@@ -72,7 +72,7 @@ Each implementation requires these environment variables:
 - `TRANSACTIONS_API_KEY` - API key for server-side transaction processing
 - `AUTHTOKEN_JWT_SECRET` - Secret key for JWT signing
 - `ACCOUNT_CREDENTIAL` - Your Global Payments account credential
-- `PORT` (optional) - Server port (defaults to 8000, or 8888 for Go)
+- `PORT` (optional) - Server port (defaults to 8000)
 
 ## API Endpoints
 
