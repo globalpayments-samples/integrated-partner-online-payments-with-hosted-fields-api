@@ -125,7 +125,7 @@ Processes a card payment using tokenized card data.
 - **Development Environment** for your chosen language:
   - Node.js 14+ (for Node.js implementation)
   - Python 3.7+ (for Python implementation)
-  - PHP 7.4+ (for PHP implementation)
+  - PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ (for PHP implementation)
   - Java 11+ (for Java implementation)
   - .NET 6.0+ (for .NET implementation)
   - Go 1.23+ (for Go implementation)
