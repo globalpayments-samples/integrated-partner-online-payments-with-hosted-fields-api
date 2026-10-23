@@ -4,7 +4,7 @@ This implementation demonstrates complete card payment processing using PHP with
 
 ## Requirements
 
-- PHP 7.4 or later (PHP 8.2+ recommended)
+- PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ for the web server
 - Composer
 - Global Payments account with JWT authentication enabled
 
@@ -38,7 +38,7 @@ This implementation demonstrates complete card payment processing using PHP with
    ```
    Or manually:
    ```bash
-   php -S localhost:8000
+   ./run.sh
    ```
 
 5. Open [http://localhost:8000](http://localhost:8000) in your browser
@@ -157,8 +157,8 @@ This implementation includes production-ready security:
 
 | Issue | Solution |
 |-------|----------|
-| `composer install` fails | Ensure PHP 7.4+ and Composer are installed. Run `php -v` to check version |
-| Port already in use | Change port: `php -S localhost:8001` |
+| `composer install` fails | Ensure PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ and Composer are installed. Run `php -v` to check version |
+| Port already in use | Set `PORT=8001` before `./run.sh` |
 | `.env` not loading | Verify `.env` file exists in the language directory (not project root) |
 | SDK errors on startup | Run `composer update` to get latest SDK version |
 
