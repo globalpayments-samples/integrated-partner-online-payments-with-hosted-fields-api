@@ -128,7 +128,7 @@ Processes a card payment using tokenized card data.
   - PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ (for PHP implementation)
   - Java 21+ (for Java implementation)
   - .NET 6.0+ (for .NET implementation)
-  - Go 1.23+ (for Go implementation)
+  - Go 1.26+ (for Go implementation)
 - **Package Manager** (npm, pip, composer, maven, dotnet, or go mod)
 
 ## Security Considerations
