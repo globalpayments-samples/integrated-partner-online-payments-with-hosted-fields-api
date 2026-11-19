@@ -78,18 +78,33 @@ def get_config():
     })
 
 
+def api_error(details):
+    """Build the 400 response used for rejected payment requests."""
+    return jsonify({
+        'success': False,
+        'message': 'Payment processing failed',
+        'error': {
+            'code': 'API_ERROR',
+            'details': details
+        }
+    }), 400
+
+
 @app.route('/process-payment', methods=['POST'])
 def process_payment():
     """Payment processing endpoint."""
     try:
         # Validate required fields
         if not request.form.get('payment_token') or not request.form.get('billing_zip') or not request.form.get('amount'):
-            raise Exception('Missing required fields')
+            return api_error('Missing required fields')
 
         # Parse and validate amount
-        amount = float(request.form.get('amount'))
+        try:
+            amount = float(request.form.get('amount'))
+        except (ValueError, TypeError):
+            return api_error('Invalid amount')
         if amount <= 0:
-            raise Exception('Invalid amount')
+            return api_error('Invalid amount')
 
         service_url = 'https://api.pit.paygateway.com'
         endpoint = '/transactions/creditsales'
@@ -154,16 +169,10 @@ def process_payment():
             }
         })
 
-    except Exception as e:
-        # Handle payment processing errors
-        return jsonify({
-            'success': False,
-            'message': 'Payment processing failed',
-            'error': {
-                'code': 'API_ERROR',
-                'details': str(e)
-            }
-        }), 400
+    except Exception:
+        # Log the error on the server and keep its details out of the response
+        app.logger.exception('Payment request failed')
+        return api_error('The payment could not be processed')
 
 
 # Start the server if this file is run directly
