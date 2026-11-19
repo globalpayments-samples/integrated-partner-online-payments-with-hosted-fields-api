@@ -52,7 +52,7 @@ The server generates JWT tokens for hosted fields authentication:
 
 ### Server Configuration
 Express.js server setup:
-- Serves static files from current directory
+- Serves the payment page (index.html)
 - Parses JSON and URL-encoded request bodies
 - Handles CORS for cross-origin requests
 - Listens on configurable port (default: 8000)
