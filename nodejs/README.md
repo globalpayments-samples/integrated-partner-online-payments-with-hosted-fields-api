@@ -4,7 +4,7 @@ This implementation demonstrates complete card payment processing using Node.js/
 
 ## Requirements
 
-- Node.js 14.x or later
+- Node.js 24.x or later
 - npm (Node Package Manager)
 - Global Payments account with JWT authentication enabled
 
@@ -166,7 +166,7 @@ Before deploying to production:
 
 | Issue | Solution |
 |-------|----------|
-| `npm install` fails | Ensure Node.js 18+ is installed. Run `node -v` to check version |
+| `npm install` fails | Ensure Node.js 24+ is installed. Run `node -v` to check version |
 | Port already in use | Set `PORT=3001` in `.env` or kill existing process on port 8000 |
 | `.env` not loading | Verify `.env` file exists in the language directory (not project root) |
 | Module not found errors | Delete `node_modules/` and run `npm install` again |
