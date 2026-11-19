@@ -130,6 +130,6 @@ All language implementations expose identical behavior. A change to one must be 
 - **Node.js**: `express` ^4.18.2, `jsonwebtoken` ^9.0.2
 - **Python**: `Flask` 3.0.0, `PyJWT` 2.8.0, `requests` 2.31.0
 - **Go**: `github.com/google/uuid` v1.5.0, `github.com/joho/godotenv` v1.5.1 (no GP SDK)
-- **.NET**: `DotEnv.Net` 3.2.1, `System.IdentityModel.Tokens.Jwt` 7.0.3 (net10.0)
+- **.NET**: `DotEnv.Net` 3.2.1, `System.IdentityModel.Tokens.Jwt` 7.1.2 (net10.0)
 - **Java**: `jjwt` 0.9.1, `dotenv-java` 3.0.0, Jakarta Servlet 5.0 / Tomcat 10.x
 - **PHP**: `firebase/php-jwt` ^6.11, `vlucas/phpdotenv` ^5.5 (GP PHP SDK listed in `composer.json` but unused)

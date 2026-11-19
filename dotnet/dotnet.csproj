@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="DotEnv.Net" Version="3.2.1" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
   </ItemGroup>
 
 </Project>
