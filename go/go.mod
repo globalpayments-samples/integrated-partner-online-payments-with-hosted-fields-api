@@ -1,6 +1,6 @@
 module github.com/globalpayments/card-payments-go
 
-go 1.23.4
+go 1.26
 
 require (
 	github.com/google/uuid v1.5.0

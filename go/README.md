@@ -4,7 +4,7 @@ This implementation demonstrates complete card payment processing using Go with 
 
 ## Requirements
 
-- Go 1.23 or later
+- Go 1.26 or later
 - Global Payments account with JWT authentication enabled
 
 ## Project Structure
@@ -131,7 +131,7 @@ Use test card numbers from Global Payments (see main README for details).
 
 | Issue | Solution |
 |-------|----------|
-| `go` command not found | Install Go 1.21+. Run `go version` to check |
+| `go` command not found | Install Go 1.26+. Run `go version` to check |
 | Module download fails | Run `go mod tidy` to resolve dependencies |
 | Port already in use | Change port in source or set `PORT` environment variable |
 | `.env` not loading | Verify `.env` file exists in the language directory (not project root) |

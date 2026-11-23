@@ -13,7 +13,7 @@ import json
 import time
 import uuid
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from dotenv import load_dotenv
 import jwt
 
@@ -21,7 +21,9 @@ import jwt
 load_dotenv()
 
 # Initialize application
-app = Flask(__name__, static_folder='.')
+# Serve only the frontend files, never the server's own files
+FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, static_folder=None)
 
 
 def create_jwt():
@@ -62,9 +64,10 @@ def sanitize_postal_code(postal_code):
 
 
 @app.route('/')
+@app.route('/index.html')
 def index():
     """Serve the main HTML page."""
-    return app.send_static_file('index.html')
+    return send_from_directory(FRONTEND_DIR, 'index.html')
 
 
 @app.route('/config')
@@ -78,18 +81,33 @@ def get_config():
     })
 
 
+def api_error(details):
+    """Build the 400 response used for rejected payment requests."""
+    return jsonify({
+        'success': False,
+        'message': 'Payment processing failed',
+        'error': {
+            'code': 'API_ERROR',
+            'details': details
+        }
+    }), 400
+
+
 @app.route('/process-payment', methods=['POST'])
 def process_payment():
     """Payment processing endpoint."""
     try:
         # Validate required fields
         if not request.form.get('payment_token') or not request.form.get('billing_zip') or not request.form.get('amount'):
-            raise Exception('Missing required fields')
+            return api_error('Missing required fields')
 
         # Parse and validate amount
-        amount = float(request.form.get('amount'))
+        try:
+            amount = float(request.form.get('amount'))
+        except (ValueError, TypeError):
+            return api_error('Invalid amount')
         if amount <= 0:
-            raise Exception('Invalid amount')
+            return api_error('Invalid amount')
 
         service_url = 'https://api.pit.paygateway.com'
         endpoint = '/transactions/creditsales'
@@ -154,20 +172,14 @@ def process_payment():
             }
         })
 
-    except Exception as e:
-        # Handle payment processing errors
-        return jsonify({
-            'success': False,
-            'message': 'Payment processing failed',
-            'error': {
-                'code': 'API_ERROR',
-                'details': str(e)
-            }
-        }), 400
+    except Exception:
+        # Log the error on the server and keep its details out of the response
+        app.logger.exception('Payment request failed')
+        return api_error('The payment could not be processed')
 
 
 # Start the server if this file is run directly
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8000))
     print(f"Server running at http://localhost:{port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=os.environ.get("FLASK_DEBUG") == "1")

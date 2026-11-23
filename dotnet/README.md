@@ -4,7 +4,7 @@ This implementation demonstrates complete card payment processing using .NET Cor
 
 ## Requirements
 
-- .NET 9.0 or later
+- .NET 10.0 or later
 - Global Payments account with JWT authentication enabled
 
 ## Project Structure
