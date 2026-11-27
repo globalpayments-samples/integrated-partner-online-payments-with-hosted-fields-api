@@ -87,8 +87,12 @@ type ProcessingIndicators struct {
 
 // PaymentAPIResponse represents the API response from Global Payments
 type PaymentAPIResponse struct {
-	Status      string `json:"status"`
-	ReferenceID string `json:"reference_id"`
+	Status            string `json:"status"`
+	ReferenceID       string `json:"reference_id"`
+	ProcessorResponse string `json:"processor_response"`
+	Error             *struct {
+		Message string `json:"message"`
+	} `json:"error"`
 }
 
 // createJWT creates a JWT for authentication
@@ -329,16 +333,20 @@ func handlePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check for successful response
+	// Check for successful response. A rejected request has an error object and no status,
+	// a declined card has the reason in processor_response
 	if !strings.EqualFold(apiResponse.Status, "approved") {
 		w.Header().Set("Content-Type", "application/json")
+		errorInfo := &ErrorInfo{Code: "PAYMENT_DECLINED", Details: apiResponse.Status}
+		if apiResponse.Error != nil {
+			errorInfo = &ErrorInfo{Code: "API_ERROR", Details: apiResponse.Error.Message}
+		} else if apiResponse.ProcessorResponse != "" {
+			errorInfo.Details = apiResponse.ProcessorResponse
+		}
 		errorResponse := Response{
 			Success: false,
 			Message: "Payment processing failed",
-			Error: &ErrorInfo{
-				Code:    "PAYMENT_DECLINED",
-				Details: apiResponse.Status,
-			},
+			Error:   errorInfo,
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errorResponse)
