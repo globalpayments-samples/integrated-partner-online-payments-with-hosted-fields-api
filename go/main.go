@@ -357,10 +357,9 @@ func handlePayment(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// Initialize environment configuration
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	// Load .env when there is one; in Docker the variables come from the environment
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
 	}
 
 	// Set up routes

@@ -36,8 +36,10 @@ check_env() {
     if [ ! -f .env ]; then
         echo -e "${RED}❌ .env file not found${NC}"
         echo -e "${YELLOW}Please create .env file with your API keys:${NC}"
-        echo "PUBLIC_API_KEY=your_public_key"
-        echo "SECRET_API_KEY=your_secret_key"
+        echo "HOSTED_FIELDS_API_KEY=your_hosted_fields_api_key"
+        echo "TRANSACTIONS_API_KEY=your_transactions_api_key"
+        echo "AUTHTOKEN_JWT_SECRET=your_jwt_secret"
+        echo "ACCOUNT_CREDENTIAL=your_account_credential"
         exit 1
     fi
     
