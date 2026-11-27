@@ -10,12 +10,12 @@ This implementation demonstrates complete card payment processing using PHP with
 
 ## Project Structure
 
-- `config.php` - Configuration and JWT generation
+- `config.php` - Configuration endpoint, returns the hosted fields API key
 - `process-payment.php` - Payment processing endpoint
-- `composer.json` - Project dependencies (firebase/php-jwt, vlucas/phpdotenv, guzzlehttp/guzzle)
+- `composer.json` - Project dependencies (firebase/php-jwt, vlucas/phpdotenv)
 - `.env.sample` - Environment variable template
 - `run.sh` - Startup script with built-in PHP server
-- `../index.html` - Shared client-side payment form (parent directory)
+- `index.html` - Client-side payment form
 
 ## Setup
 

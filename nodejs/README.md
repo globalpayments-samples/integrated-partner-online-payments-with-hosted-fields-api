@@ -14,7 +14,7 @@ This implementation demonstrates complete card payment processing using Node.js/
 - `package.json` - Project dependencies (express, dotenv, jsonwebtoken, node-fetch)
 - `.env.sample` - Environment variable template
 - `run.sh` - Startup script
-- `../index.html` - Shared client-side payment form (parent directory)
+- `index.html` - Client-side payment form
 
 ## Setup
 
