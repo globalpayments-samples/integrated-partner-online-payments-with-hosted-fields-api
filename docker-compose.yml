@@ -7,8 +7,10 @@ services:
       - "8001:8000"
     environment:
       - PORT=8000
-      - PUBLIC_API_KEY=${PUBLIC_API_KEY}
-      - SECRET_API_KEY=${SECRET_API_KEY}
+      - HOSTED_FIELDS_API_KEY=${HOSTED_FIELDS_API_KEY}
+      - TRANSACTIONS_API_KEY=${TRANSACTIONS_API_KEY}
+      - AUTHTOKEN_JWT_SECRET=${AUTHTOKEN_JWT_SECRET}
+      - ACCOUNT_CREDENTIAL=${ACCOUNT_CREDENTIAL}
     networks:
       - payments
     healthcheck:
@@ -26,8 +28,10 @@ services:
       - "8002:8000"
     environment:
       - PORT=8000
-      - PUBLIC_API_KEY=${PUBLIC_API_KEY}
-      - SECRET_API_KEY=${SECRET_API_KEY}
+      - HOSTED_FIELDS_API_KEY=${HOSTED_FIELDS_API_KEY}
+      - TRANSACTIONS_API_KEY=${TRANSACTIONS_API_KEY}
+      - AUTHTOKEN_JWT_SECRET=${AUTHTOKEN_JWT_SECRET}
+      - ACCOUNT_CREDENTIAL=${ACCOUNT_CREDENTIAL}
     networks:
       - payments
     healthcheck:
@@ -44,8 +48,10 @@ services:
     ports:
       - "8003:8000"
     environment:
-      - PUBLIC_API_KEY=${PUBLIC_API_KEY}
-      - SECRET_API_KEY=${SECRET_API_KEY}
+      - HOSTED_FIELDS_API_KEY=${HOSTED_FIELDS_API_KEY}
+      - TRANSACTIONS_API_KEY=${TRANSACTIONS_API_KEY}
+      - AUTHTOKEN_JWT_SECRET=${AUTHTOKEN_JWT_SECRET}
+      - ACCOUNT_CREDENTIAL=${ACCOUNT_CREDENTIAL}
     networks:
       - payments
     healthcheck:
@@ -62,8 +68,10 @@ services:
     ports:
       - "8004:8000"
     environment:
-      - PUBLIC_API_KEY=${PUBLIC_API_KEY}
-      - SECRET_API_KEY=${SECRET_API_KEY}
+      - HOSTED_FIELDS_API_KEY=${HOSTED_FIELDS_API_KEY}
+      - TRANSACTIONS_API_KEY=${TRANSACTIONS_API_KEY}
+      - AUTHTOKEN_JWT_SECRET=${AUTHTOKEN_JWT_SECRET}
+      - ACCOUNT_CREDENTIAL=${ACCOUNT_CREDENTIAL}
     networks:
       - payments
     healthcheck:
@@ -81,8 +89,10 @@ services:
       - "8005:8000"
     environment:
       - PORT=8000
-      - PUBLIC_API_KEY=${PUBLIC_API_KEY}
-      - SECRET_API_KEY=${SECRET_API_KEY}
+      - HOSTED_FIELDS_API_KEY=${HOSTED_FIELDS_API_KEY}
+      - TRANSACTIONS_API_KEY=${TRANSACTIONS_API_KEY}
+      - AUTHTOKEN_JWT_SECRET=${AUTHTOKEN_JWT_SECRET}
+      - ACCOUNT_CREDENTIAL=${ACCOUNT_CREDENTIAL}
     networks:
       - payments
     healthcheck:
@@ -100,8 +110,10 @@ services:
       - "8006:8000"
     environment:
       - ASPNETCORE_URLS=http://+:8000
-      - PUBLIC_API_KEY=${PUBLIC_API_KEY}
-      - SECRET_API_KEY=${SECRET_API_KEY}
+      - HOSTED_FIELDS_API_KEY=${HOSTED_FIELDS_API_KEY}
+      - TRANSACTIONS_API_KEY=${TRANSACTIONS_API_KEY}
+      - AUTHTOKEN_JWT_SECRET=${AUTHTOKEN_JWT_SECRET}
+      - ACCOUNT_CREDENTIAL=${ACCOUNT_CREDENTIAL}
     networks:
       - payments
     healthcheck:

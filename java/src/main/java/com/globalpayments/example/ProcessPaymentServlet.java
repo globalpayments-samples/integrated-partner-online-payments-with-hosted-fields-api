@@ -42,7 +42,8 @@ import org.json.JSONObject;
 public class ProcessPaymentServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private final Dotenv dotenv = Dotenv.load();
+    // Load .env when there is one; in Docker the variables come from the environment
+    private final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
     /**
      * Create JWT for authentication

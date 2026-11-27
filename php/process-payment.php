@@ -36,8 +36,9 @@ ini_set('display_errors', '0');
  */
 function configureSdk(): void
 {
+    // Load .env when there is one; in Docker the variables come from the environment
     $dotenv = Dotenv::createImmutable(__DIR__);
-    $dotenv->load();
+    $dotenv->safeLoad();
 }
 
 function createJWT(): string
