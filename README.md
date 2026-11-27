@@ -92,32 +92,37 @@ Returns hosted fields API key for client-side initialization.
 ```
 
 ### POST /process-payment
-Processes a card payment using tokenized card data.
+Processes a card payment using tokenized card data. The page posts it as a form (`application/x-www-form-urlencoded`).
 
-**Request:**
-```json
-{
-  "payment_token": "PMT_xxxxx",
-  "billing_zip": "12345",
-  "amount": "10.00"
-}
-```
+**Request fields:**
+- `payment_token` - temporary token from the hosted fields
+- `billing_zip` - billing postal code
+- `amount` - amount in USD, for example `10.00`
 
 **Response (Success):**
 ```json
 {
   "success": true,
-  "message": "Payment successful! Transaction ID: TRN_xxxxx"
+  "message": "Payment successful! Reference ID: 3f0c0d5e-...",
+  "data": {
+    "reference_id": "3f0c0d5e-..."
+  }
 }
 ```
 
-**Response (Error):**
+**Response (Error, HTTP 400):**
 ```json
 {
   "success": false,
-  "message": "Payment declined: Insufficient funds"
+  "message": "Payment processing failed",
+  "error": {
+    "code": "PAYMENT_DECLINED",
+    "details": "Insufficient Funds"
+  }
 }
 ```
+
+`PAYMENT_DECLINED` carries the processor response for a declined card. A request the API rejects (for example an expired temporary token) comes back as `API_ERROR` with the API's error message, and missing or invalid fields come back before the API is called.
 
 ## Prerequisites
 

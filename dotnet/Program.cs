@@ -193,8 +193,23 @@ public class Program
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var apiResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
-                // Verify transaction was successful
-                if (apiResponse.GetProperty("status").GetString() != "approved")
+                // Verify transaction was successful. A rejected request has an error object
+                // and no status, a declined card has the reason in processor_response
+                if (apiResponse.TryGetProperty("error", out var apiError))
+                {
+                    return Results.BadRequest(new
+                    {
+                        success = false,
+                        message = "Payment processing failed",
+                        error = new
+                        {
+                            code = "API_ERROR",
+                            details = apiError.TryGetProperty("message", out var errorMessage) ? errorMessage.GetString() : null
+                        }
+                    });
+                }
+                var status = apiResponse.TryGetProperty("status", out var statusValue) ? statusValue.GetString() : null;
+                if (status != "approved")
                 {
                     return Results.BadRequest(new
                     {
@@ -203,7 +218,7 @@ public class Program
                         error = new
                         {
                             code = "PAYMENT_DECLINED",
-                            details = apiResponse.GetProperty("status").GetString()
+                            details = apiResponse.TryGetProperty("processor_response", out var reason) ? reason.GetString() : status
                         }
                     });
                 }

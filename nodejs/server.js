@@ -90,8 +90,8 @@ app.post('/process-payment', async (req, res) => {
         }
 
         // Parse and validate amount
-        const amount = parseFloat(req.body.amount);
-        if (amount <= 0) {
+        const amount = Number(req.body.amount);
+        if (!Number.isFinite(amount) || amount <= 0) {
             throw new Error('Invalid amount');
         }
 
@@ -137,15 +137,15 @@ app.post('/process-payment', async (req, res) => {
 
         const data = await response.json();
 
-        // Verify transaction was successful
+        // Verify transaction was successful. A rejected request has an error object
+        // and no status, a declined card has the reason in processor_response
         if (data.status !== 'approved') {
             res.status(400).json({
                 success: false,
                 message: 'Payment processing failed',
-                error: {
-                    code: 'PAYMENT_DECLINED',
-                    details: data.status
-                }
+                error: data.error
+                    ? { code: 'API_ERROR', details: data.error.message }
+                    : { code: 'PAYMENT_DECLINED', details: data.processor_response || data.status }
             });
             return;
         }

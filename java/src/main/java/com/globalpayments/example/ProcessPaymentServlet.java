@@ -217,7 +217,8 @@ public class ProcessPaymentServlet extends HttpServlet {
 
             JSONObject apiResponse = new JSONObject(responseBuilder.toString());
 
-            // Verify transaction was successful
+            // Verify transaction was successful. A rejected request has an error object
+            // and no status, a declined card has the reason in processor_response
             if (!"approved".equals(apiResponse.optString("status"))) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
@@ -226,8 +227,14 @@ public class ProcessPaymentServlet extends HttpServlet {
                 errorResponse.put("message", "Payment processing failed");
 
                 JSONObject error = new JSONObject();
-                error.put("code", "PAYMENT_DECLINED");
-                error.put("details", apiResponse.optString("status"));
+                JSONObject apiError = apiResponse.optJSONObject("error");
+                if (apiError != null) {
+                    error.put("code", "API_ERROR");
+                    error.put("details", apiError.optString("message"));
+                } else {
+                    error.put("code", "PAYMENT_DECLINED");
+                    error.put("details", apiResponse.optString("processor_response", apiResponse.optString("status")));
+                }
                 errorResponse.put("error", error);
 
                 response.getWriter().write(errorResponse.toString());

@@ -152,14 +152,17 @@ def process_payment():
 
         data = response.json()
 
-        # Verify transaction was successful
+        # Verify transaction was successful. A rejected request has an error object
+        # and no status, a declined card has the reason in processor_response
+        if data.get('error'):
+            return api_error(data['error'].get('message'))
         if data.get('status') != 'approved':
             return jsonify({
                 'success': False,
                 'message': 'Payment processing failed',
                 'error': {
                     'code': 'PAYMENT_DECLINED',
-                    'details': data.get('status')
+                    'details': data.get('processor_response') or data.get('status')
                 }
             }), 400
 

@@ -150,16 +150,23 @@ try {
     );
 
     $response = json_decode($rawResponse[0]);
-    
-    // Verify transaction was successful
-    if ($response->status !== 'approved') {
+    if (!is_object($response)) {
+        throw new Exception('No valid response from the payments API');
+    }
+
+    // Verify transaction was successful. A rejected request has an error object
+    // and no status, a declined card has the reason in processor_response
+    if (isset($response->error)) {
+        throw new Exception($response->error->message ?? 'The payments API rejected the request');
+    }
+    if (($response->status ?? null) !== 'approved') {
         http_response_code(400);
         echo json_encode([
             'success' => false,
             'message' => 'Payment processing failed',
             'error' => [
                 'code' => 'PAYMENT_DECLINED',
-                'details' => $response->status
+                'details' => $response->processor_response ?? $response->status ?? null
             ]
         ]);
         exit;
