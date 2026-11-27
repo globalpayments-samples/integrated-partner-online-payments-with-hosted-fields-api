@@ -10,7 +10,7 @@
 
 3. **Go's `X-GP-*` headers must be set via map assignment, not `Header.Set()`.** Go's HTTP client auto-canonicalizes header names — `Header.Set("X-GP-Api-Key", ...)` silently becomes `X-Gp-Api-Key`, which the API rejects. The Go implementation bypasses this with direct map assignment: `req.Header["X-GP-Api-Key"] = []string{...}`. See `handlePayment()` in [`go/main.go`](go/main.go) (line ~272).
 
-4. **PHP's `composer.json` lists `globalpayments/php-sdk` but it is never used.** The PHP implementation calls the GP REST API directly via `curl.php` using `firebase/php-jwt` for token signing. The SDK dependency is an artifact — do not build on it. See [`php/process-payment.php`](php/process-payment.php) and [`php/curl.php`](php/curl.php).
+4. **PHP has no Global Payments SDK.** The PHP implementation calls the GP REST API directly via `curl.php` using `firebase/php-jwt` for token signing; `composer.json` only requires `vlucas/phpdotenv` and `firebase/php-jwt`. See [`php/process-payment.php`](php/process-payment.php) and [`php/curl.php`](php/curl.php).
 
 ## Repository Structure
 
@@ -128,8 +128,8 @@ All language implementations expose identical behavior. A change to one must be 
 ## SDK Versions
 
 - **Node.js**: `express` ^4.18.2, `jsonwebtoken` ^9.0.2
-- **Python**: `Flask` 3.0.0, `PyJWT` 2.8.0, `requests` 2.31.0
+- **Python**: `Flask` 3.1.3, `PyJWT` 2.15.0, `requests` 2.33.0
 - **Go**: `github.com/google/uuid` v1.5.0, `github.com/joho/godotenv` v1.5.1 (no GP SDK)
 - **.NET**: `DotEnv.Net` 3.2.1, `System.IdentityModel.Tokens.Jwt` 7.1.2 (net10.0)
 - **Java**: `jjwt` 0.9.1, `dotenv-java` 3.0.0, Jakarta Servlet 5.0 / Tomcat 10.x
-- **PHP**: `firebase/php-jwt` ^6.11, `vlucas/phpdotenv` ^5.5 (GP PHP SDK listed in `composer.json` but unused)
+- **PHP**: `firebase/php-jwt` ^7.0, `vlucas/phpdotenv` ^5.5 (no GP SDK)

@@ -13,7 +13,7 @@ This implementation demonstrates complete card payment processing using Go with 
 - `go.mod` - Go module dependencies (jwt-go, godotenv)
 - `.env.sample` - Environment variable template
 - `run.sh` - Startup script
-- `../index.html` - Shared client-side payment form (parent directory)
+- `static/index.html` - Client-side payment form
 
 ## Setup
 
@@ -37,7 +37,7 @@ This implementation demonstrates complete card payment processing using Go with 
    ```bash
    go run main.go
    ```
-5. Open [http://localhost:8888](http://localhost:8888) in your browser
+5. Open [http://localhost:8000](http://localhost:8000) in your browser
 
 ## Implementation Details
 
@@ -54,7 +54,7 @@ Standard library HTTP server:
 - Static file serving from parent directory
 - JSON encoding/decoding with encoding/json
 - Environment variable loading via godotenv
-- Listens on port 8888 by default
+- Listens on port 8000 by default
 
 ### Payment Processing Flow
 1. Client requests configuration via `/config` endpoint (receives `HOSTED_FIELDS_API_KEY`)

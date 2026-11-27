@@ -13,7 +13,7 @@ This implementation demonstrates complete card payment processing using .NET Cor
 - `.env.sample` - Environment variable template
 - `run.sh` - Startup script
 - `appsettings.json` - Application configuration
-- `../index.html` - Shared client-side payment form (parent directory)
+- `wwwroot/index.html` - Client-side payment form
 
 ## Setup
 

@@ -4,7 +4,7 @@ This implementation demonstrates complete card payment processing using Python/F
 
 ## Requirements
 
-- Python 3.7 or later
+- Python 3.10 or later
 - pip (Python Package Installer)
 - Global Payments account with JWT authentication enabled
 
@@ -14,7 +14,7 @@ This implementation demonstrates complete card payment processing using Python/F
 - `requirements.txt` - Project dependencies (Flask, python-dotenv, PyJWT, requests)
 - `.env.sample` - Environment variable template
 - `run.sh` - Startup script with virtual environment creation
-- `../index.html` - Shared client-side payment form (parent directory)
+- `index.html` - Client-side payment form
 
 ## Setup
 
@@ -172,8 +172,8 @@ Before deploying to production:
 
 | Issue | Solution |
 |-------|----------|
-| `pip install` fails | Ensure Python 3.7+ is installed. Run `python3 --version` to check |
-| Port already in use | Change port: `python server.py --port 8001` or edit `server.py` |
+| `pip install` fails | Ensure Python 3.10+ is installed. Run `python3 --version` to check |
+| Port already in use | Change port: `PORT=8001 python server.py` |
 | `.env` not loading | Verify `.env` file exists in the language directory (not project root) |
 | Module not found errors | Activate virtual environment and run `pip install -r requirements.txt` |
 

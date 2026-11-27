@@ -11,13 +11,12 @@ This implementation demonstrates complete card payment processing using Java wit
 ## Project Structure
 
 - `src/main/java/com/globalpayments/example/` - Java servlet implementation
-  - `ProcessPaymentServlet.java` - Payment processing endpoint
-  - `ConfigServlet.java` - Configuration endpoint
+  - `ProcessPaymentServlet.java` - Configuration and payment processing endpoints
 - `src/main/webapp/WEB-INF/web.xml` - Web application configuration
 - `.env.sample` - Environment variable template
-- `pom.xml` - Maven dependencies (jakarta.servlet, java-jwt, gson, dotenv-java)
-- `run.sh` - Startup script with Jetty server
-- `../index.html` - Shared client-side payment form (parent directory)
+- `pom.xml` - Maven dependencies (jakarta.servlet, jjwt, org.json, dotenv-java)
+- `run.sh` - Startup script, builds the war and runs it on Tomcat through the Cargo plugin
+- `src/main/webapp/index.html` - Client-side payment form
 
 ## Setup
 
@@ -39,14 +38,14 @@ This implementation demonstrates complete card payment processing using Java wit
    ```
    Or manually:
    ```bash
-   mvn jetty:run
+   mvn clean package cargo:run
    ```
 5. Open [http://localhost:8000](http://localhost:8000) in your browser
 
 ## Implementation Details
 
 ### JWT Authentication
-Uses Auth0's Java-JWT library to generate authentication tokens:
+Uses the jjwt library to generate authentication tokens:
 - Creates JWT payload with account credential and region
 - Signs token using HS256 algorithm with `AUTHTOKEN_JWT_SECRET`
 - Token includes timestamp for validation
@@ -54,10 +53,10 @@ Uses Auth0's Java-JWT library to generate authentication tokens:
 
 ### Servlet Configuration
 Jakarta EE servlet-based implementation:
-- Separate servlets for configuration and payment processing
-- JSON request/response handling with Gson
+- One servlet for configuration and payment processing
+- JSON request/response handling with org.json
 - Environment variable configuration via dotenv-java
-- Runs on embedded Jetty server for development
+- Runs on Tomcat through the Cargo Maven plugin for development
 
 ### Payment Processing Flow
 1. Client requests configuration via `/config` servlet (receives `HOSTED_FIELDS_API_KEY`)
