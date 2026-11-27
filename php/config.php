@@ -25,6 +25,8 @@ try {
     // Load .env when there is one; in Docker the variables come from the environment
     $dotenv = Dotenv::createImmutable(__DIR__);
     $dotenv->safeLoad();
+    // php.ini often leaves $_ENV empty (variables_order without E), so fill it from the real environment too
+    $_ENV += getenv();
 
     // Set response content type to JSON
     header('Content-Type: application/json');
