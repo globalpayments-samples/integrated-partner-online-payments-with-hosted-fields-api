@@ -7,6 +7,16 @@ if ($path === '/') {
     return false;
 }
 
+// Same endpoint paths as the other languages
+if ($path === '/config') {
+    require __DIR__ . '/config.php';
+    return true;
+}
+if ($path === '/process-payment') {
+    require __DIR__ . '/process-payment.php';
+    return true;
+}
+
 $isAsset = preg_match('#^/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_.-]+\.(?:html|css|js|png|jpe?g|gif|svg|ico|webp|woff2?)$#', $path);
 $isEndpoint = preg_match('#^/[A-Za-z0-9_-]+\.php$#', $path) && $path !== '/router.php';
 $isHidden = preg_match('#(^|/)(\.|vendor/|node_modules/)#', $path);
